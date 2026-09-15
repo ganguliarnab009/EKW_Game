@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>পূর্ব কলকাতা জলাভূমি রক্ষক</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- সাউন্ড এফেক্ট এবং পার্টিকেল অ্যানিমেশনের জন্য লাইব্রেরি -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p1-color: #3b82f6; /* Blue */
+            --p2-color: #ef4444; /* Red */
+        }
+        body {
+            font-family: 'Tiro Bangla', serif; /* Elegant Bengali font */
+            background: linear-gradient(135deg, #e0f2fe 0%, #93c5fd 100%); /* Blue water theme */
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        .inter-font { font-family: 'Inter', sans-serif; }
+        
+        /* Game Board Grid */
+        #board-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+            background-color: #047857; /* Dark green borders */
+            padding: 4px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .board-cell {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #334155;
+            user-select: none;
+            aspect-ratio: 1 / 1;
+            border-radius: 4px;
+            transition: transform 0.2s, background-color 0.3s;
+            box-shadow: inset 0 0 8px rgba(255,255,255,0.5);
+        }
+        
+        /* Cell Variations - Colorful Wetland Theme */
+        .cell-color-0 { background-color: #bae6fd; } /* Water Blue */
+        .cell-color-1 { background-color: #bbf7d0; } /* Grass Green */
+        .cell-color-2 { background-color: #fed7aa; } /* Earth Orange */
+        .cell-color-3 { background-color: #d9f99d; } /* Leaf Lime */
+        
+        .cell-snake { background: linear-gradient(135deg, #d1d5db, #9ca3af); color: #1f2937; } /* Pipe color */
+        .cell-ladder { background: linear-gradient(135deg, #a7f3d0, #4ade80); color: #064e3b; } /* Branch color */
+        .cell-milestone { background: linear-gradient(135deg, #fef08a, #facc15); color: #713f12; box-shadow: inset 0 0 15px rgba(234,179,8,0.6); }
+
+        /* Player Tokens */
+        .token {
+            position: absolute;
+            width: 7%;
+            height: 7%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5);
+            transition: left 0.4s ease-in-out, bottom 0.4s ease-in-out;
+            z-index: 20;
+            border: 2px solid white;
+            transform: translate(-50%, 50%);
+        }
+        .token-p1 { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+        .token-p2 { background: linear-gradient(135deg, #f87171, #dc2626); }
+        
+        /* Dice Animation */
+        @keyframes diceShake {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-20deg) scale(1.1); }
+            50% { transform: rotate(20deg) scale(1.1); }
+            75% { transform: rotate(-10deg) scale(1.05); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        .dice-rolling {
+            animation: diceShake 0.5s infinite;
+        }
+
+        /* SVG Overlay for Pipes and Branches */
+        #svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Milestone Indicator on Board */
+        .milestone-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #cbd5e1;
+            border: 1px solid #64748b;
+            transition: all 0.3s;
+        }
+        .milestone-owned-1 { background-color: var(--p1-color); border-color: white; box-shadow: 0 0 5px var(--p1-color); }
+        .milestone-owned-2 { background-color: var(--p2-color); border-color: white; box-shadow: 0 0 5px var(--p2-color); }
+
+        /* UI Panels */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+        }
+
+        /* Hide elements utility */
+        .hidden { display: none !important; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col antialiased">
+
+    
+    <!-- Screen 1: Main Menu -->
+    <div id="screen-menu" class="flex-1 flex flex-col items-center justify-center p-6 text-center z-50 fixed inset-0 bg-gradient-to-br from-blue-100 to-blue-400">
+        <div class="glass-panel p-8 rounded-3xl max-w-md w-full animate-[bounce_1s_ease-in-out_infinite] hover:animate-none duration-300">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-green-700 mb-2 leading-tight">পূর্ব কলকাতা জলাভূমি রক্ষক</h1>
+            <p class="text-lg text-emerald-600 mb-8 font-semibold">পরিবেশ সংরক্ষণের একটি শিক্ষামূলক খেলা</p>
+            
+            <div class="space-y-4">
+                <button onclick="selectMode('pvc')" class="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white text-xl rounded-2xl shadow-lg shadow-blue-200 transition transform hover:scale-105">
+                    👤 খেলোয়াড় বনাম 🤖 কম্পিউটার
+                </button>
+                <button onclick="selectMode('pvp')" class="w-full py-4 px-6 bg-emerald-600 hover:bg-emerald-700 text-white text-xl rounded-2xl shadow-lg shadow-emerald-200 transition transform hover:scale-105">
+                    👤 খেলোয়াড় ১ বনাম 👤 খেলোয়াড় ২
+                </button>
+            </div>
+            
+            <div class="mt-8 text-sm text-slate-500">
+                <p>সবুজ বাঁচান, জলাভূমি বাঁচান!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 2: Role Selection -->
+    <div id="screen-roles" class="hidden flex-1 flex-col items-center justify-center p-4 z-40 fixed inset-0 bg-blue-50">
+        <h2 class="text-3xl font-bold text-center mb-6 text-slate-800" id="role-select-title">খেলোয়াড় ১ - আপনার ভূমিকা বেছে নিন</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl w-full" id="roles-grid">
+            <!-- Roles injected via JS -->
+        </div>
+        
+        <div class="mt-8">
+            <button id="btn-confirm-role" class="hidden py-3 px-10 bg-green-600 text-white text-xl rounded-xl shadow-lg transition hover:bg-green-700">পরবর্তী ধাপ</button>
+        </div>
+    </div>
+
+    <!-- Screen 3: Main Game UI -->
+    <div id="screen-game" class="hidden flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
+        
+        <!-- Header / Player Stats (Responsive layout) -->
+        <div class="flex flex-wrap md:flex-nowrap justify-between items-center p-2 md:p-3 gap-2 bg-white/95 backdrop-blur-md shadow-sm z-30 shrink-0 border-b border-slate-200">
+            <!-- P1 Stats -->
+            <div id="p1-card" class="glass-panel w-[48%] md:w-auto flex-1 rounded-xl p-2 md:p-3 border-l-4 border-blue-500 flex flex-col justify-between transition-transform duration-300 gap-1.5 md:gap-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1 md:gap-3">
+                        <div id="p1-icon" class="text-2xl md:text-3xl bg-blue-100 p-1.5 md:p-2 rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center shrink-0">👨‍🔬</div>
+                        <div class="hidden sm:block">
+                            <h3 class="font-bold text-blue-800 leading-tight text-xs md:text-base">খেলোয়াড় ১</h3>
+                            <p id="p1-role-name" class="text-[10px] md:text-xs text-slate-500">বিজ্ঞানী</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] md:text-sm font-semibold">অবস্থান: <span id="p1-pos" class="text-sm md:text-lg text-blue-600">0</span></p>
+                        <p class="text-[10px] md:text-xs text-slate-500">মাইলস্টোন: <span id="p1-ms">0</span>/9</p>
+                    </div>
+                </div>
+                <!-- P1 Milestone Tracker -->
+                <div id="p1-milestone-tracker" class="flex justify-between items-center bg-slate-100/50 rounded-lg p-1 px-1.5 md:px-2 border border-slate-200 shadow-inner w-full min-h-[24px] md:min-h-[36px]">
+                    <!-- Icons injected via JS -->
+                </div>
+            </div>
+
+            <!-- Turn Indicator -->
+            <div class="bg-slate-800 text-white px-3 py-1.5 md:px-6 md:py-2 rounded-full text-center shadow-md shadow-slate-300 w-full md:w-auto font-bold text-sm md:text-lg whitespace-nowrap order-last md:order-none mt-1 md:mt-0 shrink-0">
+                এখন চাল: <span id="turn-text" class="text-blue-300">খেলোয়াড় ১</span>
+            </div>
+
+            <!-- P2/Computer Stats -->
+            <div id="p2-card" class="glass-panel w-[48%] md:w-auto flex-1 rounded-xl p-2 md:p-3 border-r-4 border-red-500 flex flex-col justify-between transition-transform duration-300 opacity-70 gap-1.5 md:gap-2">
+                 <div class="flex items-center justify-between flex-row-reverse md:flex-row">
+                    <div class="text-left md:text-right">
+                        <p class="text-[10px] md:text-sm font-semibold">অবস্থান: <span id="p2-pos" class="text-sm md:text-lg text-red-600">0</span></p>
+                        <p class="text-[10px] md:text-xs text-slate-500">মাইলস্টোন: <span id="p2-ms">0</span>/9</p>
+                    </div>
+                    <div class="flex items-center gap-1 md:gap-3 flex-row-reverse md:flex-row">
+                        <div id="p2-icon" class="text-2xl md:text-3xl bg-red-100 p-1.5 md:p-2 rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center shrink-0">🤖</div>
+                        <div class="text-right md:text-left hidden sm:block">
+                            <h3 id="p2-title" class="font-bold text-red-800 leading-tight text-xs md:text-base">কম্পিউটার</h3>
+                            <p id="p2-role-name" class="text-[10px] md:text-xs text-slate-500">স্বেচ্ছাসেবী</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- P2 Milestone Tracker -->
+                <div id="p2-milestone-tracker" class="flex justify-between items-center bg-slate-100/50 rounded-lg p-1 px-1.5 md:px-2 border border-slate-200 shadow-inner w-full min-h-[24px] md:min-h-[36px] flex-row-reverse md:flex-row">
+                    <!-- Icons injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        
+        <!-- Game Board Area -->
+        <div class="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center p-2 relative w-full">
+            <!-- Toast Message overlay -->
+            <div id="toast-msg" class="absolute top-2 md:top-6 px-4 py-2 md:px-6 md:py-3 rounded-xl md:rounded-2xl shadow-xl transition-all duration-500 z-50 text-center font-bold pointer-events-none transform -translate-y-6 opacity-0 flex items-center justify-center gap-2 md:gap-3 min-w-[200px] md:min-w-[300px] text-sm md:text-base">
+                বার্তা
+            </div>
+
+            <!-- Dynamically sized square board that fits perfectly on both Mobile & PC -->
+            <div class="relative shrink-0" style="width: min(95vw, 65vh); height: min(95vw, 65vh);" id="board-container">
+                <div id="board-grid" class="w-full h-full">
+                    <!-- Cells injected by JS -->
+                </div>
+                <svg id="svg-overlay"></svg>
+                
+                <!-- Tokens -->
+                <div id="token-0" class="token token-p1" style="left: -15%; bottom: -5%;"></div>
+                <div id="token-1" class="token token-p2" style="left: -5%; bottom: -15%;"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls (Dice) -->
+        <div class="bg-white/95 backdrop-blur-md p-2 md:p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] flex items-center justify-center z-30 shrink-0 border-t border-slate-200">
+            <button id="dice-btn" onclick="humanRollDice()" class="group relative bg-white border-2 md:border-4 border-slate-200 rounded-2xl md:rounded-3xl p-3 md:p-6 shadow-lg active:scale-95 transition-all overflow-hidden focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
+                <div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="flex flex-col items-center relative z-10">
+                    <span class="text-[10px] md:text-sm text-slate-500 font-bold mb-1 md:mb-2 tracking-widest inter-font uppercase">Roll Dice</span>
+                    <div id="dice-visual" class="text-4xl md:text-6xl text-slate-800 transition-transform">🎲</div>
+                    <span id="dice-result-text" class="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-extrabold text-white opacity-0 bg-slate-800 rounded-xl md:rounded-2xl transition-opacity">3</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    
+    <!-- Info Modal (Pipes, Branches, Milestones) -->
+    <div id="info-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform scale-95 transition-transform duration-300 ease-out" id="modal-content">
+            <div id="modal-header" class="p-4 text-center border-b border-slate-100 flex flex-col items-center">
+                <span id="modal-icon" class="text-5xl mb-2">🚰</span>
+                <h3 id="modal-title" class="text-2xl font-bold">দূষিত পাইপ!</h3>
+            </div>
+            <div class="p-6 text-center">
+                <p id="modal-desc" class="text-lg text-slate-600 leading-relaxed">...</p>
+                <div id="modal-extra" class="mt-4 text-sm font-bold p-3 rounded-lg bg-slate-100 hidden"></div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-100">
+                <button onclick="closeModal()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold transition">চালিয়ে যান</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Screen Modal -->
+    <div id="win-screen" class="hidden fixed inset-0 bg-gradient-to-br from-green-400 to-blue-500 z-[110] flex items-center justify-center p-4 text-white text-center">
+        <div class="max-w-lg w-full bg-white/10 backdrop-blur-md border border-white/30 p-8 rounded-3xl shadow-2xl animate-[bounce_0.5s_ease-out]">
+            <div class="text-7xl mb-4">🎉</div>
+            <h1 class="text-5xl font-extrabold mb-2 drop-shadow-md text-yellow-300">অভিনন্দন!</h1>
+            <h2 id="win-player-name" class="text-3xl font-bold mb-6 drop-shadow-sm">খেলোয়াড় ১ জিতেছে!</h2>
+            
+            <div class="bg-slate-900/40 rounded-2xl p-6 mb-8 backdrop-blur-sm">
+                <p class="text-xl mb-2">আপনি <span id="win-milestone-count" class="font-bold text-3xl text-yellow-300">5</span> টি মাইলস্টোন ধরে রেখেছেন!</p>
+                <div class="my-4 border-t border-white/20 w-1/2 mx-auto"></div>
+                <p class="text-lg text-blue-100 mb-1">আপনার প্রাপ্ত উপাধি:</p>
+                <h3 id="win-title" class="text-3xl font-extrabold text-green-300 drop-shadow-md">🌿 প্রকৃতির অভিভাবক</h3>
+            </div>
+            
+            <p class="text-lg mb-8 italic">"প্রকৃতি রক্ষার এই দায়িত্ব বাস্তব জীবনেও পালন করুন।"</p>
+            
+            <button onclick="resetGame()" class="py-4 px-8 bg-white text-blue-600 hover:bg-slate-100 text-xl font-bold rounded-full shadow-xl transition transform hover:scale-105 flex items-center justify-center mx-auto gap-2">
+                <span>🔄</span> আবার খেলুন
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME DATA DEFINITIONS ---
+
+        const ROLES = [
+            { id: 'scientist', icon: '👨‍🔬', name: 'বিজ্ঞানী' },
+            { id: 'farmer', icon: '👩‍🌾', name: 'কৃষক' },
+            { id: 'volunteer', icon: '🧒', name: 'স্বেচ্ছাসেবী' },
+            { id: 'ranger', icon: '🧑‍🚒', name: 'বনরক্ষী' },
+            { id: 'student', icon: '🧑‍🎓', name: 'ছাত্র' },
+            { id: 'photographer', icon: '📷', name: 'আলোকচিত্রী' }
+        ];
+
+        // Snakes replaced by Black Pipes (কালো জলের পাইপ)
+        const PIPES = {
+            98: { to: 28, title: 'শিল্পের বর্জ্য পাইপ', msg: 'কারখানার অপরিশোধিত বর্জ্য জল জলাভূমির বাস্তুতন্ত্র ধ্বংস করে।', icon: '🏭' },
+            85: { to: 53, title: 'প্লাস্টিক মিশ্রিত জল', msg: 'প্লাস্টিক বর্জ্য মিশ্রিত জলের পাইপ মাছ ও অন্যান্য জীবের ক্ষতি করতে পারে।', icon: '🚰' },
+            62: { to: 18, title: 'রাসায়নিক দূষণ', msg: 'ক্ষতিকর রাসায়নিক মিশ্রিত জল পাখিদের আবাসস্থল নষ্ট করে।', icon: '🛢️' },
+            47: { to: 15, title: 'অতিরিক্ত নোংরা জল', msg: 'অতিরিক্ত অপরিশোধিত নোংরা জল জলজ পরিবেশের ভারসাম্য নষ্ট করে।', icon: '🚱' },
+            32: { to: 10, title: 'বেআইনি নিষ্কাশন', msg: 'বেআইনিভাবে নিকাশি জল ফেলার পাইপ পরিবেশের ক্ষতি করে।', icon: '🚧' }
+        };
+
+        // Ladders replaced by Tree Branches (গাছের ডাল)
+        const BRANCHES = {
+            8: { to: 31, title: 'নতুন চারাগাছ', msg: 'নতুন গাছ লাগালে পরিবেশ রক্ষার কাজ সহজ হয়।', icon: '🌱' },
+            21: { to: 58, title: 'বটগাছের ডাল', msg: 'বড় গাছ পাখিদের আশ্রয় দেয় এবং জলাভূমি রক্ষা করে।', icon: '🌳' },
+            36: { to: 67, title: 'ম্যানগ্রোভের ডাল', msg: 'উপযুক্ত গাছ লাগানো মাটি ক্ষয় রোধ করে।', icon: '🌿' },
+            50: { to: 82, title: 'সবুজ আচ্ছাদন', msg: 'গাছপালার আচ্ছাদন জলাভূমির স্বাস্থ্য ভালো রাখে।', icon: '🍃' },
+            71: { to: 92, title: 'অরণ্য সৃজন', msg: 'বেশি করে গাছ লাগালে প্রাকৃতিক ভারসাম্য বজায় থাকে।', icon: '🌲' }
+        };
+
+        const MILESTONES_DATA = {
+            10: { name: 'অবৈধ ভরাট বন্ধ', icon: '🛑' },
+            20: { name: 'খাল পরিষ্কার', icon: '🧹' },
+            30: { name: 'জল পরিষ্কার', icon: '💧' },
+            40: { name: 'মাছের সংখ্যা বৃদ্ধি', icon: '🐟' },
+            50: { name: 'পাখির প্রত্যাবর্তন', icon: '🦆' },
+            60: { name: 'জীববৈচিত্র্য পুনরুদ্ধার', icon: '🌿' },
+            70: { name: 'প্লাস্টিকমুক্ত জলাভূমি', icon: '♻️' },
+            80: { name: 'জীবিকা সুরক্ষিত', icon: '🧑‍🌾' },
+            90: { name: 'জনসচেতনতা', icon: '📢' }
+        };
+
+        // --- GAME STATE ---
+        const state = {
+            mode: 'pvc', // 'pvc' or 'pvp'
+            players: [
+                { id: 0, name: 'খেলোয়াড় ১', role: null, position: 0, cssClass: 'token-p1', isComputer: false },
+                { id: 1, name: 'কম্পিউটার', role: null, position: 0, cssClass: 'token-p2', isComputer: true }
+            ],
+            currentPlayerIndex: 0,
+            milestonesStatus: {}, // { position: playerId | null }
+            isAnimating: false,
+            gameOver: false,
+            modalCallback: null // for async modal waiting
+        };
+
+        // Initialize empty milestones
+        Object.keys(MILESTONES_DATA).forEach(m => state.milestonesStatus[m] = null);
+
+        const UI = {
+            menu: document.getElementById('screen-menu'),
+            roles: document.getElementById('screen-roles'),
+            game: document.getElementById('screen-game'),
+            boardGrid: document.getElementById('board-grid'),
+            diceBtn: document.getElementById('dice-btn'),
+            diceVisual: document.getElementById('dice-visual'),
+            diceResultText: document.getElementById('dice-result-text'),
+            turnText: document.getElementById('turn-text'),
+            toast: document.getElementById('toast-msg')
+        };
+
+        const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+        // --- STREAMING_CHUNK:Sound System & Confetti... ---
+        
+        let audioInitialized = false;
+        const Synths = {};
+
+        async function initAudio() {
+            if (audioInitialized) return;
+            await Tone.start();
+            
+            // বিভিন্ন কাজের জন্য আলাদা আলাদা সাউন্ড সিন্থেসাইজার তৈরি
+            Synths.move = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 2 }).toDestination();
+            Synths.dice = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" } }).toDestination();
+            Synths.ladder = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" } }).toDestination();
+            Synths.pipe = new Tone.FMSynth({ harmonicity: 0.5, modulationIndex: 10, oscillator: { type: "sawtooth" } }).toDestination();
+            Synths.milestone = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" } }).toDestination();
+            
+            audioInitialized = true;
+        }
+
+        function playSound(type) {
+            if (!audioInitialized) return;
+            const now = Tone.now();
+            
+            // মিউজিক ভলিউম কিছুটা কমিয়ে রাখা
+            Tone.Destination.volume.value = -10; 
+
+            switch (type) {
+                case 'move':
+                    Synths.move.triggerAttackRelease("G3", "32n"); // ঘুঁটি চলার টক-টক শব্দ
+                    break;
+                case 'dice':
+                    Synths.dice.triggerAttackRelease(["C5", "E5"], "16n", now);
+                    Synths.dice.triggerAttackRelease(["E5", "G5"], "16n", now + 0.1);
+                    Synths.dice.triggerAttackRelease(["G5", "C6"], "16n", now + 0.2);
+                    break;
+                case 'ladder':
+                    // মই দিয়ে ওঠার উৎসাহজনক সুর
+                    Synths.ladder.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n", now);
+                    break;
+                case 'pipe':
+                    // সাপে কাটার সতর্কতামূলক সাইরেন বা নিচের দিকে নামার সুর
+                    Synths.pipe.triggerAttackRelease("C3", "2n");
+                    Synths.pipe.frequency.rampTo("C1", 0.6);
+                    break;
+                case 'milestone':
+                    // মাইলস্টোন পাওয়ার ফ্যানফেয়ার (বিজয় সূচক সুর)
+                    Synths.milestone.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
+                    break;
+            }
+        }
+
+        // --- STREAMING_CHUNK:Initialization and Setup Functions... ---
+
+        function init() {
+            renderBoard();
+            renderMilestoneTrackers();
+            window.addEventListener('resize', drawConnections);
+        }
+
+        function renderMilestoneTrackers() {
+            [0, 1].forEach(playerId => {
+                const trackerContainer = document.getElementById(`p${playerId + 1}-milestone-tracker`);
+                if (!trackerContainer) return;
+                trackerContainer.innerHTML = '';
+                
+                Object.keys(MILESTONES_DATA).forEach(mStr => {
+                    const ms = MILESTONES_DATA[mStr];
+                    const iconSpan = document.createElement('span');
+                    iconSpan.id = `p${playerId + 1}-tracker-${mStr}`;
+                    iconSpan.textContent = ms.icon;
+                    iconSpan.title = ms.name; // Hover text
+                    iconSpan.className = 'text-xs md:text-base opacity-30 grayscale transition-all duration-500 ease-out transform cursor-default';
+                    trackerContainer.appendChild(iconSpan);
+                });
+            });
+        }
+
+        function selectMode(mode) {
+            initAudio(); // গেমের মোড সিলেক্ট করার সাথে সাথেই সাউন্ড সিস্টেম চালু হবে
+            state.mode = mode;
+            if (mode === 'pvp') {
+                state.players[1].name = 'খেলোয়াড় ২';
+                state.players[1].isComputer = false;
+                document.getElementById('p2-title').textContent = 'খেলোয়াড় ২';
+            } else {
+                state.players[1].name = 'কম্পিউটার';
+                state.players[1].isComputer = true;
+                document.getElementById('p2-title').textContent = 'কম্পিউটার';
+            }
+            
+            UI.menu.classList.add('hidden');
+            UI.roles.classList.remove('hidden');
+            UI.roles.classList.add('flex');
+            renderRoleSelection(0);
+        }
+
+        function renderRoleSelection(playerIndex) {
+            const grid = document.getElementById('roles-grid');
+            const title = document.getElementById('role-select-title');
+            const btn = document.getElementById('btn-confirm-role');
+            
+            title.textContent = `${state.players[playerIndex].name} - আপনার ভূমিকা বেছে নিন`;
+            grid.innerHTML = '';
+            btn.classList.add('hidden');
+            
+            let selectedRoleTemp = null;
+
+            ROLES.forEach(role => {
+                // Check if role already taken by previous player
+                const isTaken = state.players.some((p, idx) => idx < playerIndex && p.role && p.role.id === role.id);
+                
+                const card = document.createElement('div');
+                card.className = `glass-panel p-6 rounded-2xl text-center cursor-pointer border-2 transition transform hover:scale-105 ${isTaken ? 'opacity-50 grayscale cursor-not-allowed' : 'border-transparent hover:border-green-400 bg-white'}`;
+                card.innerHTML = `
+                    <div class="text-5xl mb-3">${role.icon}</div>
+                    <div class="font-bold text-lg">${role.name}</div>
+                    ${isTaken ? '<div class="text-xs text-red-500 mt-1">গৃহীত</div>' : ''}
+                `;
+
+                if (!isTaken) {
+                    card.onclick = () => {
+                        // Deselect others
+                        Array.from(grid.children).forEach(c => c.classList.remove('border-green-500', 'bg-green-50', 'shadow-md'));
+                        card.classList.add('border-green-500', 'bg-green-50', 'shadow-md');
+                        selectedRoleTemp = role;
+                        btn.classList.remove('hidden');
+                    };
+                }
+                grid.appendChild(card);
+            });
+
+            btn.onclick = () => {
+                if(selectedRoleTemp) {
+                    state.players[playerIndex].role = selectedRoleTemp;
+                    if (playerIndex === 0) {
+                        // Computer auto-selects if PvC
+                        if (state.mode === 'pvc') {
+                            let available = ROLES.filter(r => r.id !== selectedRoleTemp.id);
+                            state.players[1].role = available[Math.floor(Math.random() * available.length)];
+                            startGame();
+                        } else {
+                            renderRoleSelection(1); // Player 2 selects
+                        }
+                    } else {
+                        startGame();
+                    }
+                }
+            };
+        }
+
+        // --- STREAMING_CHUNK:Board Generation and Coordinate Logic... ---
+
+        function renderBoard() {
+            UI.boardGrid.innerHTML = '';
+            
+            let cellOrder = [];
+            for (let row = 9; row >= 0; row--) {
+                for (let col = 0; col < 10; col++) {
+                    let num;
+                    if (row % 2 !== 0) {
+                        num = (row * 10) + (10 - col);
+                    } else {
+                        num = (row * 10) + col + 1;
+                    }
+                    cellOrder.push(num);
+                }
+            }
+
+            cellOrder.forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'board-cell relative';
+                cell.id = `cell-${num}`;
+                
+                const colorIndex = num % 4;
+                cell.classList.add(`cell-color-${colorIndex}`);
+                
+                let innerHTML = `<span class="opacity-80 drop-shadow-sm">${num}</span>`;
+                
+                if (PIPES[num]) {
+                    cell.classList.remove(`cell-color-${colorIndex}`);
+                    cell.classList.add('cell-snake'); // Keep class name for styling
+                    innerHTML += `<span class="absolute top-1 left-1 text-xs sm:text-sm">🚰</span>`;
+                }
+                if (BRANCHES[num]) {
+                    cell.classList.remove(`cell-color-${colorIndex}`);
+                    cell.classList.add('cell-ladder'); // Keep class name for styling
+                    innerHTML += `<span class="absolute top-1 left-1 text-xs sm:text-sm">🌿</span>`;
+                }
+                if (MILESTONES_DATA[num]) {
+                    cell.classList.remove(`cell-color-${colorIndex}`);
+                    cell.classList.add('cell-milestone');
+                    innerHTML += `<span class="absolute top-1 right-1 text-xs sm:text-sm">🚩</span>
+                                  <div id="ms-ind-${num}" class="milestone-indicator"></div>`;
+                }
+                
+                cell.innerHTML = innerHTML;
+                UI.boardGrid.appendChild(cell);
+            });
+            
+            setTimeout(drawConnections, 100);
+        }
+
+        function getCellCenter(cellNum) {
+            const cell = document.getElementById(`cell-${cellNum}`);
+            const board = UI.boardGrid;
+            if(!cell || !board) return {x: 0, y: 0};
+            
+            const cRect = cell.getBoundingClientRect();
+            const bRect = board.getBoundingClientRect();
+            return {
+                x: cRect.left - bRect.left + cRect.width / 2,
+                y: cRect.top - bRect.top + cRect.height / 2
+            };
+        }
+
+        function drawConnections() {
+            const svg = document.getElementById('svg-overlay');
+            svg.innerHTML = '';
+            
+            // Draw Branches (Green uneven lines simulating wood)
+            for (let start in BRANCHES) {
+                let p1 = getCellCenter(start);
+                let p2 = getCellCenter(BRANCHES[start].to);
+                
+                // Add some irregularity to the branch line
+                let midX = (p1.x + p2.x) / 2 + (Math.random() * 20 - 10);
+                let midY = (p1.y + p2.y) / 2 + (Math.random() * 20 - 10);
+                
+                // Draw leaves along the branch
+                let leaf1X = p1.x + (p2.x - p1.x) * 0.3;
+                let leaf1Y = p1.y + (p2.y - p1.y) * 0.3;
+                let leaf2X = p1.x + (p2.x - p1.x) * 0.7;
+                let leaf2Y = p1.y + (p2.y - p1.y) * 0.7;
+
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${midY} ${p2.x} ${p2.y}" fill="none" stroke="#22c55e" stroke-width="6" stroke-linecap="round" opacity="0.8"/>`;
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${midY} ${p2.x} ${p2.y}" fill="none" stroke="#166534" stroke-width="2" stroke-linecap="round" stroke-dasharray="4, 4" opacity="0.6"/>`;
+                // Add some simple leaf shapes (ellipses)
+                svg.innerHTML += `<ellipse cx="${leaf1X}" cy="${leaf1Y}" rx="4" ry="8" fill="#4ade80" transform="rotate(45 ${leaf1X} ${leaf1Y})" opacity="0.9"/>`;
+                svg.innerHTML += `<ellipse cx="${leaf2X}" cy="${leaf2Y}" rx="4" ry="8" fill="#4ade80" transform="rotate(-45 ${leaf2X} ${leaf2Y})" opacity="0.9"/>`;
+            }
+            
+            // Draw Black Pipes (Thick black/grey segmented lines)
+            for (let start in PIPES) {
+                let p1 = getCellCenter(start);
+                let p2 = getCellCenter(PIPES[start].to);
+                
+                // Pipes go mostly straight or with a sharp right angle
+                let cornerX = p1.x;
+                let cornerY = p2.y;
+
+                if (Math.random() > 0.5) {
+                    cornerX = p2.x;
+                    cornerY = p1.y;
+                }
+
+                // Outer pipe (black)
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} L ${cornerX} ${cornerY} L ${p2.x} ${p2.y}" fill="none" stroke="#1f2937" stroke-width="8" stroke-linejoin="miter" opacity="0.9"/>`;
+                // Inner pipe detail (grey dashed for segments)
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} L ${cornerX} ${cornerY} L ${p2.x} ${p2.y}" fill="none" stroke="#4b5563" stroke-width="4" stroke-linejoin="miter" stroke-dasharray="10, 2" opacity="0.9"/>`;
+            }
+        }
+
+        // Return % based coords for absolute positioning relative to container (bottom, left)
+        function getCoordsForNum(num) {
+            if (num === 0) return { x: -10, y: -10 }; // Offboard
+            let zeroBased = num - 1;
+            let row = Math.floor(zeroBased / 10);
+            let col = zeroBased % 10;
+            // Snaking logic: even rows go right, odd rows go left
+            let x = row % 2 === 0 ? col : 9 - col;
+            let y = row;
+            return { x, y };
+        }
+
+        // --- STREAMING_CHUNK:Game Start and UI Updates... ---
+
+        function startGame() {
+            UI.roles.classList.add('hidden');
+            UI.roles.classList.remove('flex');
+            UI.game.classList.remove('hidden');
+            UI.game.classList.add('flex');
+            
+            // Setup Player Info UI
+            state.players.forEach(p => {
+                document.getElementById(`p${p.id+1}-icon`).textContent = p.role.icon;
+                document.getElementById(`p${p.id+1}-role-name`).textContent = p.role.name;
+                document.getElementById(`token-${p.id}`).innerHTML = `<span class="text-xs sm:text-base">${p.role.icon}</span>`;
+            });
+
+            // Re-render board connections just in case container size changed
+            setTimeout(drawConnections, 100);
+            
+            // Reset state
+            state.currentPlayerIndex = 0;
+            state.gameOver = false;
+            state.players.forEach(p => p.position = 0);
+            Object.keys(MILESTONES_DATA).forEach(m => state.milestonesStatus[m] = null);
+            
+            updateTokensVisual();
+            updateUIInfo();
+            updateMilestoneIndicators();
+            updateTurnVisuals();
+        }
+
+        function updateTokensVisual() {
+            state.players.forEach(p => {
+                const token = document.getElementById(`token-${p.id}`);
+                const coords = getCoordsForNum(p.position);
+                
+                if (p.position === 0) {
+                    // Stagger offboard positions
+                    token.style.left = p.id === 0 ? '-5%' : '5%';
+                    token.style.bottom = p.id === 0 ? '-5%' : '-15%';
+                } else {
+                    // Cell width/height is ~10%. Center is at 5%. Stagger slightly to prevent perfect overlap
+                    let offset = p.id === 0 ? -10 : 10;
+                    token.style.left = `calc(${coords.x * 10 + 5}% + ${offset}px)`;
+                    token.style.bottom = `calc(${coords.y * 10 + 5}% - ${offset}px)`;
+                }
+            });
+        }
+
+        function countPlayerMilestones(playerId) {
+            return Object.values(state.milestonesStatus).filter(ownerId => ownerId === playerId).length;
+        }
+
+        function updateUIInfo() {
+            state.players.forEach(p => {
+                document.getElementById(`p${p.id+1}-pos`).textContent = p.position;
+                document.getElementById(`p${p.id+1}-ms`).textContent = countPlayerMilestones(p.id);
+            });
+        }
+
+        function updateTurnVisuals() {
+            const currentP = state.players[state.currentPlayerIndex];
+            UI.turnText.textContent = currentP.name;
+            UI.turnText.className = currentP.id === 0 ? 'text-blue-300' : 'text-red-300';
+            
+            const p1Card = document.getElementById('p1-card');
+            const p2Card = document.getElementById('p2-card');
+            
+            if (currentP.id === 0) {
+                p1Card.classList.remove('opacity-70', 'scale-95');
+                p1Card.classList.add('scale-105', 'shadow-lg');
+                p2Card.classList.add('opacity-70', 'scale-95');
+                p2Card.classList.remove('scale-105', 'shadow-lg');
+                UI.diceBtn.disabled = false;
+            } else {
+                p2Card.classList.remove('opacity-70', 'scale-95');
+                p2Card.classList.add('scale-105', 'shadow-lg');
+                p1Card.classList.add('opacity-70', 'scale-95');
+                p1Card.classList.remove('scale-105', 'shadow-lg');
+                
+                if (currentP.isComputer) {
+                    UI.diceBtn.disabled = true;
+                    setTimeout(computerTurn, 1200); // AI Delay
+                } else {
+                    UI.diceBtn.disabled = false;
+                }
+            }
+        }
+
+        function updateMilestoneIndicators() {
+            Object.keys(state.milestonesStatus).forEach(mStr => {
+                let m = parseInt(mStr);
+                const indicator = document.getElementById(`ms-ind-${m}`);
+                if(indicator) {
+                    indicator.className = 'milestone-indicator'; // reset
+                    const owner = state.milestonesStatus[m];
+                    if (owner === 0) indicator.classList.add('milestone-owned-1');
+                    if (owner === 1) indicator.classList.add('milestone-owned-2');
+                }
+            });
+
+            // Update Trackers for both players
+            [0, 1].forEach(playerId => {
+                Object.keys(state.milestonesStatus).forEach(mStr => {
+                    const owner = state.milestonesStatus[mStr];
+                    const trackerIcon = document.getElementById(`p${playerId + 1}-tracker-${mStr}`);
+                    
+                    if (trackerIcon) {
+                        if (owner === playerId) {
+                            // Milestone Owned by this player - Highlight
+                            trackerIcon.classList.remove('opacity-30', 'grayscale', 'scale-100');
+                            trackerIcon.classList.add('opacity-100', 'scale-125', 'drop-shadow-md');
+                        } else {
+                            // Not Owned or Owned by opponent - Dim
+                            trackerIcon.classList.add('opacity-30', 'grayscale', 'scale-100');
+                            trackerIcon.classList.remove('opacity-100', 'scale-125', 'drop-shadow-md');
+                        }
+                    }
+                });
+            });
+
+            updateUIInfo(); // update counts in header
+        }
+
+        function showToast(msg, type = 'default') {
+            // Reset classes for the new style
+            UI.toast.className = "absolute top-6 px-6 py-3 rounded-2xl shadow-xl transition-all duration-500 z-50 text-center font-bold pointer-events-none transform -translate-y-6 opacity-0 flex items-center justify-center gap-3 min-w-[250px] md:min-w-[300px]";
+            
+            // Apply colorful styles based on notification type
+            if (type === 'milestone') {
+                UI.toast.classList.add('bg-gradient-to-r', 'from-green-500', 'to-blue-600', 'text-white', 'border-2', 'border-white', 'shadow-[0_10px_25px_rgba(34,197,94,0.6)]', 'scale-105');
+            } else if (type === 'error' || type === 'warning') {
+                UI.toast.classList.add('bg-red-500', 'text-white', 'shadow-md');
+            } else {
+                UI.toast.classList.add('bg-slate-800', 'text-white', 'shadow-md');
+            }
+
+            UI.toast.innerHTML = msg; // Supports HTML formatting now
+
+            // Trigger animation
+            UI.toast.classList.remove('opacity-0', '-translate-y-6');
+            UI.toast.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                UI.toast.classList.remove('opacity-100', 'translate-y-0');
+                UI.toast.classList.add('opacity-0', '-translate-y-6');
+            }, 3000); // 3 seconds visibility for reading
+        }
+
+        // --- STREAMING_CHUNK:Core Gameplay Logic (Dice, Movement, Rules)... ---
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        async function humanRollDice() {
+            if (state.isAnimating || state.players[state.currentPlayerIndex].isComputer) return;
+            await executeTurn();
+        }
+
+        async function computerTurn() {
+            if (state.gameOver) return;
+            await executeTurn();
+        }
+
+        async function executeTurn() {
+            state.isAnimating = true;
+            UI.diceBtn.disabled = true;
+            
+            playSound('dice'); // ছক্কা ঘোরানোর শব্দ
+            
+            // Roll Animation
+            UI.diceVisual.classList.add('dice-rolling');
+            UI.diceResultText.classList.remove('opacity-100');
+            UI.diceResultText.classList.add('opacity-0');
+            
+            await sleep(600); // fake roll duration
+            
+            const roll = Math.floor(Math.random() * 6) + 1;
+            
+            UI.diceVisual.classList.remove('dice-rolling');
+            UI.diceVisual.textContent = DICE_FACES[roll - 1];
+            UI.diceResultText.textContent = roll;
+            
+            // Pop the result number
+            UI.diceResultText.classList.remove('opacity-0');
+            UI.diceResultText.classList.add('opacity-100', 'scale-150');
+            setTimeout(() => UI.diceResultText.classList.remove('scale-150'), 200);
+
+            await sleep(500);
+            UI.diceResultText.classList.remove('opacity-100');
+            UI.diceResultText.classList.add('opacity-0');
+            UI.diceVisual.textContent = '🎲'; // reset visual
+
+            const player = state.players[state.currentPlayerIndex];
+            
+            // Rule: Exact 100 needed
+            if (player.position + roll > 100) {
+                showToast(`১০০-তে পৌঁছানোর জন্য ঠিক ${100 - player.position} প্রয়োজন!`, 'warning');
+                await sleep(1500);
+            } else {
+                // Step-by-step movement
+                for (let i = 1; i <= roll; i++) {
+                    const oldPos = player.position;
+                    player.position++;
+                    updateTokensVisual();
+                    updateUIInfo();
+                    
+                    playSound('move'); // প্রতি ঘরে চলার শব্দ
+                    
+                    // Rule: Check milestone claiming on passing
+                    checkClaimMilestones(player, oldPos, player.position);
+                    
+                    await sleep(350); // Speed of walking
+                }
+
+                if (player.position === 100) {
+                    handleWin(player);
+                    return; // End sequence
+                }
+
+                // Check board events (Pipes / Branches)
+                await handleBoardEvents(player);
+            }
+
+            // End Turn logic
+            if(!state.gameOver) {
+                state.currentPlayerIndex = state.currentPlayerIndex === 0 ? 1 : 0;
+                updateTurnVisuals();
+            }
+            state.isAnimating = false;
+        }
+
+        function checkClaimMilestones(player, oldPos, newPos) {
+            Object.keys(MILESTONES_DATA).forEach(mStr => {
+                let m = parseInt(mStr);
+                // If crossed or landed on a milestone going forward
+                if (m > oldPos && m <= newPos) {
+                    if (state.milestonesStatus[m] === null) {
+                        state.milestonesStatus[m] = player.id;
+                        
+                        playSound('milestone'); // মাইলস্টোন পাওয়ার সাউন্ড
+                        
+                        // পার্টিকেল বা কনফেটি অ্যানিমেশন (Confetti Effect)
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 },
+                            colors: ['#22c55e', '#3b82f6', '#eab308']
+                        });
+
+                        // Beautiful colorful toast content
+                        showToast(`
+                            <div class="text-4xl drop-shadow-md animate-[bounce_1s_ease-in-out_infinite]">${MILESTONES_DATA[m].icon}</div>
+                            <div class="text-left">
+                                <div class="text-xs text-yellow-200 uppercase tracking-wider font-extrabold mb-1">নতুন মাইলস্টোন!</div>
+                                <div class="text-lg md:text-xl font-extrabold leading-tight">${MILESTONES_DATA[m].name}</div>
+                            </div>
+                        `, 'milestone');
+                        updateMilestoneIndicators();
+                    }
+                }
+            });
+        }
+
+        // --- STREAMING_CHUNK:Pipes, Branches, and Modal Interactions... ---
+
+        // স্মুথ অ্যানিমেশনের জন্য ফাংশন (Curve & Pipe logic)
+        async function animatePath(player, startPos, endPos, type) {
+            const token = document.getElementById(`token-${player.id}`);
+            const startCoords = getCoordsForNum(startPos);
+            const endCoords = getCoordsForNum(endPos);
+            
+            let offset = player.id === 0 ? -10 : 10;
+            const startX = startCoords.x * 10 + 5;
+            const startY = startCoords.y * 10 + 5;
+            const endX = endCoords.x * 10 + 5;
+            const endY = endCoords.y * 10 + 5;
+
+            // CSS Transition সাময়িকভাবে বন্ধ করা হলো
+            token.style.transition = 'none';
+
+            const frames = 60; // 60 FPS animation
+            
+            if (type === 'pipe') {
+                // পাইপের ক্ষেত্রে ডান বা বামে গিয়ে তারপর নিচে নামবে (L-shape)
+                let cornerX = startX;
+                let cornerY = endY;
+                if (Math.random() > 0.5) {
+                    cornerX = endX;
+                    cornerY = startY;
+                }
+
+                for (let i = 0; i <= frames; i++) {
+                    let t = i / frames;
+                    let currentX, currentY;
+                    if (t < 0.5) {
+                        let t1 = t * 2;
+                        currentX = startX + (cornerX - startX) * t1;
+                        currentY = startY + (cornerY - startY) * t1;
+                    } else {
+                        let t2 = (t - 0.5) * 2;
+                        currentX = cornerX + (endX - cornerX) * t2;
+                        currentY = cornerY + (endY - cornerY) * t2;
+                    }
+                    token.style.left = `calc(${currentX}% + ${offset}px)`;
+                    token.style.bottom = `calc(${currentY}% - ${offset}px)`;
+                    await new Promise(requestAnimationFrame);
+                }
+            } else if (type === 'branch') {
+                // গাছের ডালের ক্ষেত্রে সুন্দর বাঁকা পথ (Quadratic Bezier Curve)
+                let midX = (startX + endX) / 2 + (Math.random() * 20 - 10);
+                let midY = (startY + endY) / 2 + (Math.random() * 20 - 10);
+
+                for (let i = 0; i <= frames; i++) {
+                    let t = i / frames;
+                    let currentX = (1-t)*(1-t)*startX + 2*(1-t)*t*midX + t*t*endX;
+                    let currentY = (1-t)*(1-t)*startY + 2*(1-t)*t*midY + t*t*endY;
+                    
+                    token.style.left = `calc(${currentX}% + ${offset}px)`;
+                    token.style.bottom = `calc(${currentY}% - ${offset}px)`;
+                    await new Promise(requestAnimationFrame);
+                }
+            }
+
+            // CSS Transition আবার চালু করা হলো
+            token.style.transition = 'left 0.4s ease-in-out, bottom 0.4s ease-in-out';
+            player.position = endPos;
+            updateTokensVisual();
+        }
+
+        async function handleBoardEvents(player) {
+            let pos = player.position;
+            
+            if (PIPES[pos]) {
+                const p = PIPES[pos];
+                await showModalPromise(p.icon, p.title, p.msg, "error");
+                
+                playSound('pipe'); // সাপে কাটার সাউন্ড
+                const targetPos = p.to;
+                
+                // স্মুথ পাইপ স্লাইডিং
+                await animatePath(player, pos, targetPos, 'pipe');
+                
+                updateUIInfo();
+                
+                // Rule: Release milestones if falling below them
+                releaseLostMilestones(player, pos, targetPos);
+                
+                await sleep(200); 
+                
+            } else if (BRANCHES[pos]) {
+                const b = BRANCHES[pos];
+                await showModalPromise(b.icon, b.title, b.msg, "success");
+                
+                playSound('ladder'); // মই দিয়ে ওঠার সাউন্ড
+                const oldPos = player.position;
+                const targetPos = b.to;
+                
+                // স্মুথ ব্রাঞ্চ ক্লাইম্বিং
+                await animatePath(player, pos, targetPos, 'branch');
+                
+                updateUIInfo();
+                
+                // Rule: Claim milestones while going UP the branch
+                checkClaimMilestones(player, oldPos, targetPos);
+                
+                await sleep(200);
+            }
+        }
+
+        function releaseLostMilestones(player, startPos, endPos) {
+            let lostCount = 0;
+            Object.keys(state.milestonesStatus).forEach(mStr => {
+                let m = parseInt(mStr);
+                // If milestone is strictly greater than new position, and owned by this player
+                if (m > endPos && state.milestonesStatus[m] === player.id) {
+                    state.milestonesStatus[m] = null;
+                    lostCount++;
+                }
+            });
+            if (lostCount > 0) {
+                showToast(`⚠️ আপনি ${lostCount} টি মাইলস্টোন হারিয়েছেন!`, 'error');
+                updateMilestoneIndicators();
+            }
+        }
+
+        // Modal Logic wrapped in a Promise to pause game loop until user clicks continue
+        function showModalPromise(icon, title, desc, type) {
+            return new Promise(resolve => {
+                const modal = document.getElementById('info-modal');
+                const content = document.getElementById('modal-content');
+                
+                document.getElementById('modal-icon').textContent = icon;
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-desc').textContent = desc;
+                
+                const header = document.getElementById('modal-header');
+                if(type === 'error') {
+                    header.className = "p-4 text-center border-b border-red-200 bg-red-50 text-red-700 flex flex-col items-center";
+                    document.getElementById('modal-title').className = "text-2xl font-bold text-red-700";
+                } else {
+                    header.className = "p-4 text-center border-b border-green-200 bg-green-50 text-green-700 flex flex-col items-center";
+                    document.getElementById('modal-title').className = "text-2xl font-bold text-green-700";
+                }
+
+                modal.classList.remove('hidden');
+                // Tiny delay for transition to kick in
+                setTimeout(() => content.classList.remove('scale-95'), 10);
+
+                state.modalCallback = () => {
+                    content.classList.add('scale-95');
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                        resolve();
+                    }, 300); // wait for scale down animation
+                };
+
+                // Auto-close for computer
+                if(state.players[state.currentPlayerIndex].isComputer) {
+                    setTimeout(() => {
+                        if(state.modalCallback) state.modalCallback();
+                    }, 2500);
+                }
+            });
+        }
+
+        function closeModal() {
+            if(state.modalCallback) {
+                state.modalCallback();
+                state.modalCallback = null;
+            }
+        }
+
+        // --- STREAMING_CHUNK:Winning Logic and Reset... ---
+
+        function getWinnerTitle(milestoneCount) {
+            if (milestoneCount >= 8) return "👑 পূর্ব কলকাতা জলাভূমির মহারক্ষক";
+            if (milestoneCount >= 6) return "🏆 জলাভূমির নায়ক";
+            if (milestoneCount >= 4) return "🌿 প্রকৃতির অভিভাবক";
+            if (milestoneCount >= 2) return "🌱 নবীন জলাভূমি রক্ষক";
+            return "💚 পরিবেশ বন্ধু";
+        }
+
+        function handleWin(player) {
+            state.gameOver = true;
+            UI.diceBtn.disabled = true;
+            
+            playSound('milestone');
+            
+            // জেতার পর টানা কনফেটি বা আতশবাজি ফুটতে থাকবে
+            const duration = 4000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#22c55e', '#3b82f6', '#eab308'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#22c55e', '#3b82f6', '#eab308'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
+            const msCount = countPlayerMilestones(player.id);
+            const title = getWinnerTitle(msCount);
+            
+            document.getElementById('win-player-name').textContent = `${player.name} জিতেছে!`;
+            document.getElementById('win-milestone-count').textContent = msCount;
+            document.getElementById('win-title').textContent = title;
+            
+            const winScreen = document.getElementById('win-screen');
+            winScreen.classList.remove('hidden');
+        }
+
+        function resetGame() {
+            document.getElementById('win-screen').classList.add('hidden');
+            UI.game.classList.add('hidden');
+            UI.game.classList.remove('flex');
+            
+            // Reset players array roles
+            state.players.forEach(p => p.role = null);
+            
+            UI.menu.classList.remove('hidden');
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
