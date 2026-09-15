@@ -152,8 +152,15 @@
                 </button>
             </div>
             
+            <!-- Credits Section -->
             <div class="mt-8 text-sm text-slate-500">
-                <p>সবুজ বাঁচান, জলাভূমি বাঁচান!</p>
+                <p class="font-bold text-base mb-2 text-green-800">সবুজ বাঁচান, জলাভূমি বাঁচান!</p>
+                <div class="text-[11px] md:text-xs leading-relaxed text-slate-700 bg-white/60 p-3 rounded-xl border border-slate-200 shadow-sm text-left">
+                    <p class="font-extrabold text-emerald-700 text-center mb-1">Wipro Earthian Sustainability & Water Project</p>
+                    <p><b>Prepared by:</b> Sayan Mondal, Trishanjit Sardar, Snehasish Mondal, Dhruba Mondal, Sutapa Mondal</p>
+                    <p><b>Guide:</b> Arnab Ganguli</p>
+                    <p class="font-extrabold text-blue-800 mt-2 text-center text-sm">Hatgacha Haridas Vidyapith (H.S)</p>
+                </div>
             </div>
         </div>
     </div>
@@ -299,6 +306,7 @@
     </div>
 
     <script>
+
         // --- GAME DATA DEFINITIONS ---
 
         const ROLES = [
@@ -371,7 +379,6 @@
 
         const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
-        // --- STREAMING_CHUNK:Sound System & Confetti... ---
         
         let audioInitialized = false;
         const Synths = {};
@@ -422,7 +429,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK:Initialization and Setup Functions... ---
 
         function init() {
             renderBoard();
@@ -521,7 +527,6 @@
             };
         }
 
-        // --- STREAMING_CHUNK:Board Generation and Coordinate Logic... ---
 
         function renderBoard() {
             UI.boardGrid.innerHTML = '';
@@ -645,7 +650,6 @@
             return { x, y };
         }
 
-        // --- STREAMING_CHUNK:Game Start and UI Updates... ---
 
         function startGame() {
             UI.roles.classList.add('hidden');
@@ -793,7 +797,6 @@
             }, 3000); // 3 seconds visibility for reading
         }
 
-        // --- STREAMING_CHUNK:Core Gameplay Logic (Dice, Movement, Rules)... ---
 
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -907,70 +910,81 @@
             });
         }
 
-        // --- STREAMING_CHUNK:Pipes, Branches, and Modal Interactions... ---
 
-        // স্মুথ অ্যানিমেশনের জন্য ফাংশন (Curve & Pipe logic)
-        async function animatePath(player, startPos, endPos, type) {
-            const token = document.getElementById(`token-${player.id}`);
-            const startCoords = getCoordsForNum(startPos);
-            const endCoords = getCoordsForNum(endPos);
-            
-            let offset = player.id === 0 ? -10 : 10;
-            const startX = startCoords.x * 10 + 5;
-            const startY = startCoords.y * 10 + 5;
-            const endX = endCoords.x * 10 + 5;
-            const endY = endCoords.y * 10 + 5;
+        // Time-based smooth animation function (Curve & Pipe logic)
+        function animatePath(player, startPos, endPos, type) {
+            return new Promise(resolve => {
+                const token = document.getElementById(`token-${player.id}`);
+                const startCoords = getCoordsForNum(startPos);
+                const endCoords = getCoordsForNum(endPos);
+                
+                let offset = player.id === 0 ? -10 : 10;
+                const startX = startCoords.x * 10 + 5;
+                const startY = startCoords.y * 10 + 5;
+                const endX = endCoords.x * 10 + 5;
+                const endY = endCoords.y * 10 + 5;
 
-            // CSS Transition সাময়িকভাবে বন্ধ করা হলো
-            token.style.transition = 'none';
+                // CSS Transition সাময়িকভাবে বন্ধ করা হলো
+                token.style.transition = 'none';
 
-            const frames = 60; // 60 FPS animation
-            
-            if (type === 'pipe') {
-                // পাইপের ক্ষেত্রে ডান বা বামে গিয়ে তারপর নিচে নামবে (L-shape)
-                let cornerX = startX;
-                let cornerY = endY;
-                if (Math.random() > 0.5) {
-                    cornerX = endX;
-                    cornerY = startY;
-                }
-
-                for (let i = 0; i <= frames; i++) {
-                    let t = i / frames;
-                    let currentX, currentY;
-                    if (t < 0.5) {
-                        let t1 = t * 2;
-                        currentX = startX + (cornerX - startX) * t1;
-                        currentY = startY + (cornerY - startY) * t1;
-                    } else {
-                        let t2 = (t - 0.5) * 2;
-                        currentX = cornerX + (endX - cornerX) * t2;
-                        currentY = cornerY + (endY - cornerY) * t2;
+                const duration = 650; // 650ms time-based duration for smooth feel
+                const startTime = performance.now();
+                
+                let cornerX, cornerY, midX, midY;
+                if (type === 'pipe') {
+                    // পাইপের ক্ষেত্রে ডান বা বামে গিয়ে তারপর নিচে নামবে (L-shape)
+                    cornerX = startX;
+                    cornerY = endY;
+                    if (Math.random() > 0.5) {
+                        cornerX = endX;
+                        cornerY = startY;
                     }
-                    token.style.left = `calc(${currentX}% + ${offset}px)`;
-                    token.style.bottom = `calc(${currentY}% - ${offset}px)`;
-                    await new Promise(requestAnimationFrame);
+                } else if (type === 'branch') {
+                    // গাছের ডালের ক্ষেত্রে সুন্দর বাঁকা পথ (Quadratic Bezier Curve)
+                    midX = (startX + endX) / 2 + (Math.random() * 20 - 10);
+                    midY = (startY + endY) / 2 + (Math.random() * 20 - 10);
                 }
-            } else if (type === 'branch') {
-                // গাছের ডালের ক্ষেত্রে সুন্দর বাঁকা পথ (Quadratic Bezier Curve)
-                let midX = (startX + endX) / 2 + (Math.random() * 20 - 10);
-                let midY = (startY + endY) / 2 + (Math.random() * 20 - 10);
 
-                for (let i = 0; i <= frames; i++) {
-                    let t = i / frames;
-                    let currentX = (1-t)*(1-t)*startX + 2*(1-t)*t*midX + t*t*endX;
-                    let currentY = (1-t)*(1-t)*startY + 2*(1-t)*t*midY + t*t*endY;
+                function step(currentTime) {
+                    let elapsed = currentTime - startTime;
+                    let t = Math.min(elapsed / duration, 1);
                     
+                    // easeInOutQuad easing for smoother start and stop
+                    let easeT = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+                    let currentX, currentY;
+                    
+                    if (type === 'pipe') {
+                        if (easeT < 0.5) {
+                            let t1 = easeT * 2;
+                            currentX = startX + (cornerX - startX) * t1;
+                            currentY = startY + (cornerY - startY) * t1;
+                        } else {
+                            let t2 = (easeT - 0.5) * 2;
+                            currentX = cornerX + (endX - cornerX) * t2;
+                            currentY = cornerY + (endY - cornerY) * t2;
+                        }
+                    } else if (type === 'branch') {
+                        currentX = (1-easeT)*(1-easeT)*startX + 2*(1-easeT)*easeT*midX + easeT*easeT*endX;
+                        currentY = (1-easeT)*(1-easeT)*startY + 2*(1-easeT)*easeT*midY + easeT*easeT*endY;
+                    }
+
                     token.style.left = `calc(${currentX}% + ${offset}px)`;
                     token.style.bottom = `calc(${currentY}% - ${offset}px)`;
-                    await new Promise(requestAnimationFrame);
-                }
-            }
 
-            // CSS Transition আবার চালু করা হলো
-            token.style.transition = 'left 0.4s ease-in-out, bottom 0.4s ease-in-out';
-            player.position = endPos;
-            updateTokensVisual();
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        // CSS Transition আবার চালু করা হলো
+                        token.style.transition = 'left 0.4s ease-in-out, bottom 0.4s ease-in-out';
+                        player.position = endPos;
+                        updateTokensVisual();
+                        resolve();
+                    }
+                }
+                
+                requestAnimationFrame(step);
+            });
         }
 
         async function handleBoardEvents(player) {
@@ -1076,7 +1090,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK:Winning Logic and Reset... ---
 
         function getWinnerTitle(milestoneCount) {
             if (milestoneCount >= 8) return "👑 পূর্ব কলকাতা জলাভূমির মহারক্ষক";
