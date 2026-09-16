@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0b3d3a">
+    <title>পূর্ব কলকাতা জলাভূমি রক্ষক</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- সাউন্ড এফেক্ট এবং পার্টিকেল অ্যানিমেশনের জন্য লাইব্রেরি -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Hind+Siliguri:wght@400;500;600;700&family=Baloo+Da+2:wght@500;600;700;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p1-color: #2563eb;
+            --p2-color: #dc2626;
+            --marsh-950: #05211f;
+            --marsh-900: #0b3d3a;
+            --marsh-800: #0f4d47;
+            --marsh-700: #146157;
+            --emerald: #1f9d74;
+            --emerald-light: #4fc99a;
+            --gold: #e8b54a;
+            --gold-light: #f6d78a;
+            --mist: #cfeee6;
+            --rust: #8b5e3c;
+            color-scheme: dark;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Hind Siliguri', 'Tiro Bangla', serif;
+            background: radial-gradient(ellipse at top, #123f3a 0%, #05211f 60%, #041613 100%);
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        .inter-font { font-family: 'Inter', sans-serif; }
+        .display-font { font-family: 'Baloo Da 2', 'Hind Siliguri', sans-serif; }
+        .story-font { font-family: 'Tiro Bangla', serif; }
+
+        /* ---------- Ambient wetland atmosphere ---------- */
+        #ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        #ambient-bg .glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.35;
+        }
+        #ambient-bg .glow-1 { width: 40vmax; height: 40vmax; top: -10vmax; left: -10vmax; background: radial-gradient(circle, var(--emerald) 0%, transparent 70%); }
+        #ambient-bg .glow-2 { width: 45vmax; height: 45vmax; bottom: -15vmax; right: -12vmax; background: radial-gradient(circle, #0ea5e9 0%, transparent 70%); }
+        #ambient-bg .glow-3 { width: 30vmax; height: 30vmax; bottom: 10vmax; left: 20vmax; background: radial-gradient(circle, var(--gold) 0%, transparent 70%); opacity: 0.15; }
+
+        .firefly {
+            position: absolute;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--gold-light);
+            box-shadow: 0 0 8px 3px rgba(246,215,138,0.7);
+            animation: drift linear infinite;
+            opacity: 0;
+        }
+        @keyframes drift {
+            0% { transform: translate(0, 0); opacity: 0; }
+            10% { opacity: 0.9; }
+            50% { transform: translate(20px, -120px); }
+            90% { opacity: 0.7; }
+            100% { transform: translate(-10px, -260px); opacity: 0; }
+        }
+
+        /* ---------- Typography helpers ---------- */
+        .title-shimmer {
+            background: linear-gradient(100deg, var(--gold-light) 0%, var(--emerald-light) 35%, var(--gold-light) 60%, var(--emerald-light) 100%);
+            background-size: 220% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: shimmerMove 6s ease-in-out infinite;
+        }
+        @keyframes shimmerMove {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 100% center; }
+        }
+
+        /* ---------- Buttons ---------- */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, var(--emerald-light), var(--emerald) 55%, #147a5a);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 -3px 0 rgba(0,0,0,0.15) inset, 0 10px 24px rgba(15,109,86,0.45);
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+        .btn-primary:active { transform: translateY(2px) scale(0.99); box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 -1px 0 rgba(0,0,0,0.15) inset, 0 4px 10px rgba(15,109,86,0.4); }
+        .btn-gold {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, var(--gold-light), var(--gold) 55%, #c8902e);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 -3px 0 rgba(0,0,0,0.15) inset, 0 10px 24px rgba(200,144,46,0.45);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .btn-gold:active { transform: translateY(2px) scale(0.99); }
+        .btn-primary::after, .btn-gold::after {
+            content: '';
+            position: absolute; top: 0; left: -60%;
+            width: 40%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.45), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease;
+        }
+        .btn-primary:hover::after, .btn-gold:hover::after { left: 130%; }
+
+        /* ---------- Board frame ---------- */
+        #board-container {
+            padding: 10px;
+            border-radius: 20px;
+            background: linear-gradient(160deg, #2a6f60, #0b3d3a 55%, #062a26);
+            box-shadow:
+                0 20px 45px rgba(0,0,0,0.45),
+                0 0 0 1px rgba(232,181,74,0.25),
+                inset 0 2px 6px rgba(255,255,255,0.15);
+        }
+
+        #board-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+            background: linear-gradient(160deg, #0a4a42, #063029);
+            padding: 4px;
+            border-radius: 12px;
+            box-shadow: inset 0 4px 14px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .board-cell {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: #0f2e29;
+            user-select: none;
+            aspect-ratio: 1 / 1;
+            border-radius: 5px;
+            transition: transform 0.2s ease;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35), inset 0 -3px 4px rgba(0,0,0,0.08);
+        }
+        .board-cell:hover { transform: scale(1.06); z-index: 5; }
+
+        .cell-color-0 { background: linear-gradient(160deg, #d5f3fb, #a9e2f2); }
+        .cell-color-1 { background: linear-gradient(160deg, #d3f5df, #a3e6bb); }
+        .cell-color-2 { background: linear-gradient(160deg, #ffe9c7, #ffd399); }
+        .cell-color-3 { background: linear-gradient(160deg, #eaf4b8, #d3e88a); }
+
+        .cell-snake {
+            background: linear-gradient(155deg, #cbd2d8, #8891a0 55%, #5b6577);
+            color: #1c2430;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25), inset 0 3px 6px rgba(0,0,0,0.35);
+        }
+        .cell-ladder {
+            background: linear-gradient(155deg, #bdf4cf, #57c98a 60%, #2f9d68);
+            color: #073522;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+        }
+        .cell-milestone {
+            background: linear-gradient(155deg, var(--gold-light), var(--gold) 60%, #c8902e);
+            color: #5a3d0f;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 0 16px rgba(232,181,74,0.55);
+            animation: milestonePulse 3s ease-in-out infinite;
+        }
+        @keyframes milestonePulse {
+            0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 0 10px rgba(232,181,74,0.4); }
+            50% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 0 20px rgba(232,181,74,0.75); }
+        }
+
+        .token {
+            position: absolute;
+            width: 7.5%;
+            height: 7.5%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.6);
+            transition: left 0.4s ease-in-out, bottom 0.4s ease-in-out;
+            z-index: 20;
+            border: 2px solid white;
+            transform: translate(-50%, 50%);
+            animation: tokenBob 2.2s ease-in-out infinite;
+        }
+        @keyframes tokenBob {
+            0%, 100% { margin-top: 0px; }
+            50% { margin-top: -3px; }
+        }
+        .token-p1 { background: radial-gradient(circle at 35% 30%, #8fc0ff, #2563eb 70%); box-shadow: 0 6px 10px rgba(0,0,0,0.4), 0 0 0 3px rgba(37,99,235,0.25), inset 0 2px 3px rgba(255,255,255,0.6); }
+        .token-p2 { background: radial-gradient(circle at 35% 30%, #ffb3ab, #dc2626 70%); box-shadow: 0 6px 10px rgba(0,0,0,0.4), 0 0 0 3px rgba(220,38,38,0.25), inset 0 2px 3px rgba(255,255,255,0.6); }
+
+        @keyframes diceShake {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-22deg) scale(1.12); }
+            50% { transform: rotate(18deg) scale(1.14); }
+            75% { transform: rotate(-12deg) scale(1.06); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        .dice-rolling { animation: diceShake 0.45s infinite; filter: drop-shadow(0 0 10px rgba(232,181,74,0.8)); }
+
+        #dice-btn {
+            background: linear-gradient(180deg, #ffffff, #eef2f6);
+            box-shadow: 0 10px 22px rgba(0,0,0,0.35), inset 0 2px 0 rgba(255,255,255,0.9), inset 0 -3px 6px rgba(0,0,0,0.06);
+        }
+        #dice-btn:not(:disabled):hover { box-shadow: 0 12px 26px rgba(232,181,74,0.35), inset 0 2px 0 rgba(255,255,255,0.9); }
+
+        #svg-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .milestone-indicator {
+            position: absolute;
+            bottom: 2px; right: 2px;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.55);
+            border: 1px solid rgba(90,61,15,0.5);
+            transition: all 0.3s;
+        }
+        .milestone-owned-1 { background-color: var(--p1-color); border-color: white; box-shadow: 0 0 6px var(--p1-color); }
+        .milestone-owned-2 { background-color: var(--p2-color); border-color: white; box-shadow: 0 0 6px var(--p2-color); }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 12px 36px rgba(0,0,0,0.25);
+        }
+        .glass-panel-dark {
+            background: rgba(6, 40, 35, 0.55);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(232,181,74,0.3);
+            box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+        }
+
+        .hidden { display: none !important; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(232,181,74,0.5); border-radius: 4px; }
+        
+        @keyframes powerGlow {
+            0% { box-shadow: 0 0 5px #eab308; }
+            50% { box-shadow: 0 0 20px #eab308; }
+            100% { box-shadow: 0 0 5px #eab308; }
+        }
+        .power-active { animation: powerGlow 1.5s infinite; border-color: #eab308; }
+
+        .player-card {
+            background: linear-gradient(160deg, rgba(255,255,255,0.97), rgba(240,247,245,0.92));
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+
+        #win-screen::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.25), rgba(0,0,0,0.65));
+        }
+        #win-screen > div { position: relative; z-index: 1; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Ambient wetland background -->
+    <div id="ambient-bg">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+        <div class="firefly" style="left:12%; bottom:10%; animation-duration:9s; animation-delay:0s;"></div>
+        <div class="firefly" style="left:28%; bottom:5%; animation-duration:11s; animation-delay:2s;"></div>
+        <div class="firefly" style="left:45%; bottom:15%; animation-duration:8s; animation-delay:4s;"></div>
+        <div class="firefly" style="left:65%; bottom:8%; animation-duration:12s; animation-delay:1s;"></div>
+        <div class="firefly" style="left:80%; bottom:12%; animation-duration:10s; animation-delay:3s;"></div>
+        <div class="firefly" style="left:90%; bottom:6%; animation-duration:9.5s; animation-delay:5s;"></div>
+    </div>
+
+    <!-- Screen 1: Main Menu -->
+    <div id="screen-menu" class="flex-1 flex flex-col items-center justify-center p-6 text-center z-[60] fixed inset-0">
+        <div class="glass-panel-dark p-8 md:p-10 rounded-[2rem] max-w-md w-full relative">
+            <div class="text-5xl mb-3">🌾</div>
+            <h1 class="display-font title-shimmer text-4xl md:text-5xl font-extrabold mb-2 leading-tight">পূর্ব কলকাতা জলাভূমি রক্ষক</h1>
+            <p class="text-base md:text-lg text-emerald-200/90 mb-8 font-semibold">পরিবেশ সংরক্ষণের একটি শিক্ষামূলক খেলা</p>
+            
+            <div class="space-y-4">
+                <button onclick="showIntro()" class="btn-primary w-full py-4 px-6 text-white text-xl rounded-2xl transition transform hover:scale-[1.02] font-bold display-font">
+                    ▶️ খেলা শুরু করুন
+                </button>
+            </div>
+            
+            <div class="mt-8 text-sm text-emerald-100/70">
+                <p class="font-bold text-base mb-2 text-gold" style="color:var(--gold-light)">সবুজ বাঁচান, জলাভূমি বাঁচান!</p>
+                <div class="text-[11px] md:text-xs leading-relaxed text-emerald-50/90 bg-black/25 p-3 rounded-xl border border-white/10 shadow-sm text-left">
+                    <p class="font-extrabold text-center mb-1" style="color:var(--gold-light)">Wipro Earthian Sustainability & Water Project</p>
+                    <p><b>Prepared by:</b> Sayan Mondal, Trishanjit Sardar, Snehasish Mondal, Dhruba Mondal, Sutapa Mondal</p>
+                    <p><b>Guide:</b> Arnab Ganguli</p>
+                    <p class="font-extrabold mt-2 text-center text-sm text-white">Hatgacha Haridas Vidyapith (H.S)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 1.5: Story Intro -->
+    <div id="screen-intro" class="hidden flex-1 flex-col items-center justify-center p-4 md:p-6 text-center z-[55] fixed inset-0 bg-slate-900/90 backdrop-blur-sm text-white">
+        <div class="max-w-2xl w-full bg-slate-900/90 p-6 md:p-8 rounded-3xl shadow-2xl border border-white/10 transform transition-all">
+            <h2 class="display-font text-3xl md:text-4xl font-extrabold text-emerald-400 mb-4">পূর্ব কলকাতা জলাভূমি (EKW) বিপন্ন!</h2>
+            <div class="story-font text-left text-slate-300 space-y-4 text-sm md:text-lg leading-relaxed mb-6">
+                <p>পূর্ব কলকাতা জলাভূমি শহরের ফুসফুস এবং প্রাকৃতিক কিডনি। কিন্তু <span class="text-red-400 font-bold text-xl">"দূষণাসুর" 👿</span> নামক এক ভয়ংকর দৈত্য প্লাস্টিক, রাসায়নিক এবং বেআইনি নির্মাণের মাধ্যমে একে ধ্বংস করতে চাইছে।</p>
+                <p>পরিবেশ রক্ষার ৯টি ধাপ (মাইলস্টোন) পার করে আপনি EKW কে বাঁচাতে পারেন। কিন্তু সাবধান! দূষণাসুর যদি আপনার আগে ওই মাইলস্টোনগুলোতে পৌঁছায়, সে পরিবেশ ধ্বংস করা শুরু করবে।</p>
+                <p class="font-bold text-yellow-300 text-center text-lg md:text-xl mt-4">আপনি কি EKW বাঁচাতে দূষণাসুরের সাথে লড়তে প্রস্তুত?</p>
+            </div>
+            <button onclick="showMilestonesScreen()" class="btn-primary py-3 px-10 text-white text-xl rounded-xl transition font-bold w-full md:w-auto display-font">পরবর্তী ধাপ ➡️</button>
+        </div>
+    </div>
+
+    <!-- Screen 1.8: Milestones Info -->
+    <div id="screen-milestones-info" class="hidden flex-1 flex-col items-center justify-center p-4 md:p-6 text-center z-[50] fixed inset-0 bg-emerald-950/95 backdrop-blur-md text-white overflow-y-auto">
+        <div class="max-w-3xl w-full glass-panel-dark p-6 md:p-8 rounded-3xl shadow-2xl my-auto">
+            <h2 class="display-font text-2xl md:text-4xl font-extrabold mb-2" style="color:var(--gold-light)">EKW রক্ষার ৯টি ধাপ</h2>
+            <p class="text-emerald-200 mb-6 text-sm md:text-base">এই ৯টি মাইলস্টোন অর্জন করে জলাভূমিকে রক্ষা করুন:</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-emerald-100 mb-8 font-semibold text-sm md:text-base" id="milestones-list-container">
+                <!-- Injected via JS -->
+            </div>
+            
+            <button onclick="selectMode('pvc')" class="btn-gold py-3 px-10 text-emerald-950 text-lg md:text-xl rounded-xl transition transform hover:scale-[1.02] font-extrabold w-full md:w-auto display-font">
+                এসো EKW কে বাঁচাই! 🌿
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen 2: Role Selection -->
+    <div id="screen-roles" class="hidden flex-1 flex-col items-center justify-center p-2 md:p-4 z-40 fixed inset-0 overflow-y-auto" style="background: radial-gradient(ellipse at top, #0f4d47 0%, #05211f 70%);">
+        <div class="my-auto w-full max-w-4xl flex flex-col items-center py-8">
+            <h2 class="display-font text-2xl md:text-3xl font-bold text-center mb-2 text-white">আপনার ভূমিকা বেছে নিন</h2>
+            <p class="text-emerald-200/80 mb-6 text-sm md:text-base text-center px-4">প্রতিটি চরিত্রের জলাভূমি রক্ষার জন্য একটি বিশেষ ক্ষমতা রয়েছে।</p>
+            
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 w-full px-2" id="roles-grid">
+                <!-- Roles injected via JS -->
+            </div>
+            
+            <div class="mt-8">
+                <button id="btn-confirm-role" class="hidden btn-gold py-3 px-12 text-emerald-950 text-xl rounded-xl transition font-bold transform hover:scale-[1.02] display-font">লড়াই শুরু করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 3: Main Game UI -->
+    <div id="screen-game" class="hidden flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
+        
+        <!-- Header / Player Stats -->
+        <div class="flex flex-wrap md:flex-nowrap justify-between items-center p-2 md:p-3 gap-2 shadow-sm z-30 shrink-0 border-b" style="background: linear-gradient(180deg, rgba(6,42,38,0.97), rgba(6,42,38,0.9)); border-color: rgba(232,181,74,0.25);">
+            <!-- P1 Stats -->
+            <div id="p1-card" class="player-card w-[48%] md:w-auto flex-1 rounded-xl p-2 md:p-3 border-l-4 border-blue-500 flex flex-col justify-between transition-transform duration-300 gap-1.5 md:gap-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1 md:gap-3">
+                        <div id="p1-icon" class="text-2xl md:text-3xl bg-blue-100 p-1.5 md:p-2 rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center shrink-0">👨‍🔬</div>
+                        <div class="hidden sm:block">
+                            <h3 class="font-bold text-blue-800 leading-tight text-xs md:text-base">খেলোয়াড় ১</h3>
+                            <p id="p1-role-name" class="text-[10px] md:text-xs text-slate-500">বিজ্ঞানী</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] md:text-sm font-semibold">অবস্থান: <span id="p1-pos" class="text-sm md:text-lg text-blue-600">0</span></p>
+                        <p class="text-[10px] md:text-xs text-slate-500">মাইলস্টোন: <span id="p1-ms">0</span>/9</p>
+                    </div>
+                </div>
+                <!-- P1 Milestone Tracker -->
+                <div id="p1-milestone-tracker" class="flex justify-between items-center bg-slate-100/50 rounded-lg p-1 px-1.5 md:px-2 border border-slate-200 shadow-inner w-full min-h-[24px] md:min-h-[36px]">
+                    <!-- Icons injected via JS -->
+                </div>
+            </div>
+
+            <!-- Turn Indicator -->
+            <div class="display-font text-white px-3 py-1.5 md:px-6 md:py-2 rounded-full text-center w-full md:w-auto font-bold text-sm md:text-lg whitespace-nowrap order-last md:order-none mt-1 md:mt-0 shrink-0" style="background: linear-gradient(180deg, #0f4d47, #062a26); box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px rgba(232,181,74,0.3);">
+                এখন চাল: <span id="turn-text" class="text-blue-300">খেলোয়াড় ১</span>
+            </div>
+
+            <!-- P2/Computer Stats -->
+            <div id="p2-card" class="player-card w-[48%] md:w-auto flex-1 rounded-xl p-2 md:p-3 border-r-4 border-red-500 flex flex-col justify-between transition-transform duration-300 opacity-70 gap-1.5 md:gap-2">
+                 <div class="flex items-center justify-between flex-row-reverse md:flex-row">
+                    <div class="text-left md:text-right">
+                        <p class="text-[10px] md:text-sm font-semibold">অবস্থান: <span id="p2-pos" class="text-sm md:text-lg text-red-600">0</span></p>
+                        <p class="text-[10px] md:text-xs text-slate-500">মাইলস্টোন: <span id="p2-ms">0</span>/9</p>
+                    </div>
+                    <div class="flex items-center gap-1 md:gap-3 flex-row-reverse md:flex-row">
+                        <div id="p2-icon" class="text-2xl md:text-3xl bg-red-100 p-1.5 md:p-2 rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center shrink-0">👿</div>
+                        <div class="text-right md:text-left hidden sm:block">
+                            <h3 id="p2-title" class="font-bold text-red-800 leading-tight text-xs md:text-base">দূষণাসুর</h3>
+                            <p id="p2-role-name" class="text-[10px] md:text-xs text-slate-500">অসুর</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- P2 Milestone Tracker -->
+                <div id="p2-milestone-tracker" class="flex justify-between items-center bg-slate-100/50 rounded-lg p-1 px-1.5 md:px-2 border border-slate-200 shadow-inner w-full min-h-[24px] md:min-h-[36px] flex-row-reverse md:flex-row">
+                    <!-- Icons injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Board Area -->
+        <div class="flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-center p-2 relative w-full" style="background: radial-gradient(ellipse at center, rgba(15,77,71,0.4), transparent 70%);">
+            <div id="toast-msg" class="absolute top-2 md:top-6 px-4 py-2 md:px-6 md:py-3 rounded-xl md:rounded-2xl shadow-xl transition-all duration-500 z-50 text-center font-bold pointer-events-none transform -translate-y-6 opacity-0 flex items-center justify-center gap-2 md:gap-3 min-w-[200px] md:min-w-[300px] text-sm md:text-base">
+                বার্তা
+            </div>
+
+            <div class="relative shrink-0" style="width: min(95vw, 65vh); height: min(95vw, 65vh);" id="board-container">
+                <div id="board-grid" class="w-full h-full"></div>
+                <svg id="svg-overlay"></svg>
+                
+                <div id="token-0" class="token token-p1" style="left: -15%; bottom: -5%;"></div>
+                <div id="token-1" class="token token-p2" style="left: -5%; bottom: -15%;"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="backdrop-blur-md p-2 md:p-4 flex items-center justify-center z-30 shrink-0 border-t gap-4 relative" style="background: linear-gradient(0deg, rgba(6,42,38,0.98), rgba(6,42,38,0.9)); border-color: rgba(232,181,74,0.25); box-shadow: 0 -6px 16px rgba(0,0,0,0.3);">
+            
+            <!-- Photographer Power UI -->
+            <div id="power-photo-ui" class="hidden absolute bottom-full mb-4 left-1/2 transform -translate-x-1/2 bg-slate-900 p-3 rounded-2xl shadow-xl flex gap-2 border border-white/10">
+                <button onclick="usePhotoPower(1)" class="w-10 h-10 bg-slate-700 text-white rounded-lg hover:bg-emerald-500 font-bold transition">1</button>
+                <button onclick="usePhotoPower(2)" class="w-10 h-10 bg-slate-700 text-white rounded-lg hover:bg-emerald-500 font-bold transition">2</button>
+                <button onclick="usePhotoPower(3)" class="w-10 h-10 bg-slate-700 text-white rounded-lg hover:bg-emerald-500 font-bold transition">3</button>
+                <button onclick="usePhotoPower(4)" class="w-10 h-10 bg-slate-700 text-white rounded-lg hover:bg-emerald-500 font-bold transition">4</button>
+                <button onclick="usePhotoPower(5)" class="w-10 h-10 bg-slate-700 text-white rounded-lg hover:bg-emerald-500 font-bold transition">5</button>
+                <button onclick="usePhotoPower(6)" class="w-10 h-10 bg-slate-700 text-white rounded-lg hover:bg-emerald-500 font-bold transition">6</button>
+            </div>
+
+            <button id="btn-special-power" onclick="togglePower()" class="hidden flex-col items-center justify-center p-2 md:p-3 rounded-2xl text-amber-100 transition-all min-w-[70px]" style="background: linear-gradient(180deg, #123f3a, #0b3d3a); border: 2px solid rgba(232,181,74,0.4);">
+                <span class="text-xl md:text-2xl" id="power-icon">⚡</span>
+                <span class="text-[9px] md:text-[10px] font-bold mt-1 uppercase text-center leading-tight" id="power-name">ক্ষমতা</span>
+                <span class="text-[8px] md:text-[9px] bg-black/30 px-2 rounded-full mt-1" id="power-count">1/1</span>
+            </button>
+
+            <button id="dice-btn" onclick="humanRollDice()" class="group relative rounded-2xl md:rounded-3xl p-3 md:p-6 active:scale-95 transition-all overflow-hidden focus:outline-none focus:ring-4 focus:ring-emerald-400/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 w-24 h-24 md:w-32 md:h-32" style="border: 3px solid var(--gold);">
+                <div class="absolute inset-0 bg-amber-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="flex flex-col items-center justify-center h-full relative z-10">
+                    <span class="text-[10px] md:text-sm text-slate-500 font-bold mb-1 tracking-widest inter-font uppercase hidden md:block">Roll Dice</span>
+                    <div id="dice-visual" class="text-4xl md:text-6xl text-slate-800 transition-transform">🎲</div>
+                    <span id="dice-result-text" class="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-extrabold text-white opacity-0 bg-slate-800 rounded-xl md:rounded-2xl transition-opacity">3</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform scale-95 transition-transform duration-300 ease-out" id="modal-content" style="box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,181,74,0.3);">
+            <div id="modal-header" class="p-4 text-center border-b border-slate-100 flex flex-col items-center">
+                <span id="modal-icon" class="text-5xl mb-2">🚰</span>
+                <h3 id="modal-title" class="display-font text-2xl font-bold">দূষিত পাইপ!</h3>
+            </div>
+            <div class="p-6 text-center">
+                <p id="modal-desc" class="text-lg text-slate-600 leading-relaxed">...</p>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-100 flex gap-2">
+                <button id="btn-reroll" class="hidden btn-gold w-full py-3 text-emerald-950 rounded-xl font-bold transition display-font">আবার ছক্কা ফেলুন (অদম্য শক্তি)</button>
+                <button onclick="closeModal()" class="btn-primary w-full py-3 text-white rounded-xl font-bold transition display-font">চালিয়ে যান</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win/Loss Screen Modal -->
+    <div id="win-screen" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4 text-white text-center bg-gradient-to-br from-green-400 to-blue-500">
+        <div class="max-w-lg w-full glass-panel-dark p-8 rounded-3xl shadow-2xl animate-[bounce_0.5s_ease-out]" style="box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,181,74,0.35);">
+            <div id="end-icon" class="text-7xl mb-4">🎉</div>
+            <h1 id="end-title" class="display-font text-5xl font-extrabold mb-2 drop-shadow-md" style="color:var(--gold-light)">অভিনন্দন!</h1>
+            <h2 id="win-player-name" class="text-3xl font-bold mb-6 drop-shadow-sm">খেলোয়াড় ১ জিতেছে!</h2>
+            
+            <div id="end-stats-box" class="bg-black/30 rounded-2xl p-6 mb-8 backdrop-blur-sm border border-white/10">
+                <p class="text-xl mb-2">আপনি <span id="win-milestone-count" class="display-font font-bold text-3xl" style="color:var(--gold-light)">5</span> টি মাইলস্টোন অর্জন করেছেন!</p>
+                <div class="my-4 border-t border-white/20 w-1/2 mx-auto"></div>
+                <p class="text-lg text-emerald-100 mb-1">আপনার প্রাপ্ত উপাধি:</p>
+                <h3 id="win-title" class="display-font text-3xl font-extrabold text-emerald-300 drop-shadow-md">🌿 প্রকৃতির অভিভাবক</h3>
+            </div>
+            
+            <p id="end-quote" class="story-font text-lg mb-8 italic">"প্রকৃতি রক্ষার এই দায়িত্ব বাস্তব জীবনেও পালন করুন।"</p>
+            
+            <button onclick="resetGame()" class="btn-gold py-4 px-8 text-emerald-950 text-xl font-bold rounded-full transition transform hover:scale-105 flex items-center justify-center mx-auto gap-2 display-font">
+                <span>🔄</span> আবার খেলুন
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const ROLES = [
+            { id: 'scientist', icon: '👨‍🔬', name: 'বিজ্ঞানী', desc: '<b>গবেষণার ঢাল:</b> সাপের মুখ থেকে গেমে ১ বার রক্ষা পাবেন।' },
+            { id: 'farmer', icon: '👩‍🌾', name: 'কৃষক', desc: '<b>মাটির টান:</b> মই দিয়ে উঠলে গেমে ১ বার অতিরিক্ত চালের সুযোগ পাবেন।' },
+            { id: 'volunteer', icon: '🧒', name: 'স্বেচ্ছাসেবী', desc: '<b>অদম্য শক্তি:</b> ছক্কায় ১ বা ২ পড়লে গেমে ১ বার দান বাতিলের সুযোগ পাবেন।' },
+            { id: 'ranger', icon: '🧑‍🚒', name: 'বনরক্ষী', desc: '<b>প্রকৃতির পাহারাদার:</b> গেমে ১ বার সাপের মুখে পড়লে অর্ধেক রাস্তায় আটকে যাবেন।' },
+            { id: 'student', icon: '🧑‍🎓', name: 'ছাত্র', desc: '<b>তারুণ্যের জোয়ার:</b> মাইলস্টোন পার হলে গেমে ১ বার অতিরিক্ত ২ ঘর এগিয়ে যাবেন।' },
+            { id: 'photographer', icon: '📷', name: 'আলোকচিত্রী', desc: '<b>ফোকাস লেন্স:</b> গেমে ১ বার নিজের ইচ্ছামতো ছক্কার দান (১-৬) বেছে নিতে পারবেন।' }
+        ];
+
+        const PIPES = {
+            98: { to: 28, title: 'শিল্পের বর্জ্য পাইপ', msg: 'কারখানার অপরিশোধিত বর্জ্য জল জলাভূমির বাস্তুতন্ত্র ধ্বংস করে।', icon: '🏭' },
+            85: { to: 53, title: 'প্লাস্টিক মিশ্রিত জল', msg: 'প্লাস্টিক বর্জ্য মিশ্রিত জলের পাইপ মাছ ও অন্যান্য জীবের ক্ষতি করতে পারে।', icon: '🚰' },
+            62: { to: 18, title: 'রাসায়নিক দূষণ', msg: 'ক্ষতিকর রাসায়নিক মিশ্রিত জল পাখিদের আবাসস্থল নষ্ট করে।', icon: '🛢️' },
+            47: { to: 15, title: 'অতিরিক্ত নোংরা জল', msg: 'অতিরিক্ত অপরিশোধিত নোংরা জল জলজ পরিবেশের ভারসাম্য নষ্ট করে।', icon: '🚱' },
+            32: { to: 10, title: 'বেআইনি নিষ্কাশন', msg: 'বেআইনিভাবে নিকাশি জল ফেলার পাইপ পরিবেশের ক্ষতি করে।', icon: '🚧' }
+        };
+
+        const BRANCHES = {
+            8: { to: 31, title: 'নতুন চারাগাছ', msg: 'নতুন গাছ লাগালে পরিবেশ রক্ষার কাজ সহজ হয়।', icon: '🌱' },
+            21: { to: 58, title: 'বটগাছের ডাল', msg: 'বড় গাছ পাখিদের আশ্রয় দেয় এবং জলাভূমি রক্ষা করে।', icon: '🌳' },
+            36: { to: 67, title: 'ম্যানগ্রোভের ডাল', msg: 'উপযুক্ত গাছ লাগানো মাটি ক্ষয় রোধ করে।', icon: '🌿' },
+            50: { to: 82, title: 'সবুজ আচ্ছাদন', msg: 'গাছপালার আচ্ছাদন জলাভূমির স্বাস্থ্য ভালো রাখে।', icon: '🍃' },
+            71: { to: 92, title: 'অরণ্য সৃজন', msg: 'বেশি করে গাছ লাগালে প্রাকৃতিক ভারসাম্য বজায় থাকে।', icon: '🌲' }
+        };
+
+        const MILESTONES_DATA = {
+            10: { name: 'অবৈধ ভরাট বন্ধ', icon: '🛑' },
+            20: { name: 'খাল পরিষ্কার', icon: '🧹' },
+            30: { name: 'জল পরিষ্কার', icon: '💧' },
+            40: { name: 'মাছের সংখ্যা বৃদ্ধি', icon: '🐟' },
+            50: { name: 'পাখির প্রত্যাবর্তন', icon: '🦆' },
+            60: { name: 'জীববৈচিত্র্য পুনরুদ্ধার', icon: '🌿' },
+            70: { name: 'প্লাস্টিকমুক্ত জলাভূমি', icon: '♻️' },
+            80: { name: 'জীবিকা সুরক্ষিত', icon: '🧑‍🌾' },
+            90: { name: 'জনসচেতনতা', icon: '📢' }
+        };
+
+        const state = {
+            mode: 'pvc',
+            players: [
+                { id: 0, name: 'খেলোয়াড় ১', role: null, position: 0, cssClass: 'token-p1', isComputer: false },
+                { id: 1, name: 'দূষণাসুর 👿', role: null, position: 0, cssClass: 'token-p2', isComputer: true }
+            ],
+            currentPlayerIndex: 0,
+            milestonesStatus: {},
+            isAnimating: false,
+            gameOver: false,
+            modalCallback: null,
+            powers: {
+                scientistUsed: false,
+                farmerUsed: false,
+                volunteerUsed: false,
+                rangerUsed: false,
+                studentUsed: false,
+                photographerUsed: false,
+                isPhotoSelecting: false
+            }
+        };
+
+        Object.keys(MILESTONES_DATA).forEach(m => state.milestonesStatus[m] = null);
+
+        const UI = {
+            menu: document.getElementById('screen-menu'),
+            intro: document.getElementById('screen-intro'),
+            milestonesInfo: document.getElementById('screen-milestones-info'),
+            roles: document.getElementById('screen-roles'),
+            game: document.getElementById('screen-game'),
+            boardGrid: document.getElementById('board-grid'),
+            diceBtn: document.getElementById('dice-btn'),
+            diceVisual: document.getElementById('dice-visual'),
+            diceResultText: document.getElementById('dice-result-text'),
+            turnText: document.getElementById('turn-text'),
+            toast: document.getElementById('toast-msg')
+        };
+
+        const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+        let audioInitialized = false;
+        const Synths = {};
+
+        async function initAudio() {
+            if (audioInitialized) return;
+            await Tone.start();
+            Synths.move = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 2 }).toDestination();
+            Synths.dice = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" } }).toDestination();
+            Synths.ladder = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" } }).toDestination();
+            Synths.pipe = new Tone.FMSynth({ harmonicity: 0.5, modulationIndex: 10, oscillator: { type: "sawtooth" } }).toDestination();
+            Synths.milestone = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" } }).toDestination();
+            audioInitialized = true;
+        }
+
+        function playSound(type) {
+            if (!audioInitialized) return;
+            const now = Tone.now();
+            Tone.Destination.volume.value = -10; 
+            switch (type) {
+                case 'move': Synths.move.triggerAttackRelease("G3", "32n"); break;
+                case 'dice':
+                    Synths.dice.triggerAttackRelease(["C5", "E5"], "16n", now);
+                    Synths.dice.triggerAttackRelease(["E5", "G5"], "16n", now + 0.1);
+                    Synths.dice.triggerAttackRelease(["G5", "C6"], "16n", now + 0.2);
+                    break;
+                case 'ladder': Synths.ladder.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n", now); break;
+                case 'pipe':
+                    Synths.pipe.triggerAttackRelease("C3", "2n");
+                    Synths.pipe.frequency.rampTo("C1", 0.6);
+                    break;
+                case 'milestone': Synths.milestone.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n"); break;
+            }
+        }
+
+        function init() {
+            renderBoard();
+            renderMilestoneTrackers();
+            populateMilestonesInfo();
+            window.addEventListener('resize', drawConnections);
+        }
+
+        function showIntro() {
+            initAudio();
+            UI.menu.classList.add('hidden');
+            UI.intro.classList.remove('hidden');
+            UI.intro.classList.add('flex');
+        }
+
+        function populateMilestonesInfo() {
+            const container = document.getElementById('milestones-list-container');
+            container.innerHTML = '';
+            Object.keys(MILESTONES_DATA).forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-3 bg-emerald-700/50 p-2 rounded-lg border border-emerald-600/50';
+                item.innerHTML = `<span class="text-2xl">${MILESTONES_DATA[m].icon}</span> <span>${m} ঘর: ${MILESTONES_DATA[m].name}</span>`;
+                container.appendChild(item);
+            });
+        }
+
+        function showMilestonesScreen() {
+            UI.intro.classList.add('hidden');
+            UI.intro.classList.remove('flex');
+            UI.milestonesInfo.classList.remove('hidden');
+            UI.milestonesInfo.classList.add('flex');
+        }
+
+        function selectMode(mode) {
+            UI.milestonesInfo.classList.add('hidden');
+            UI.milestonesInfo.classList.remove('flex');
+            state.players[1].role = { id: 'demon', icon: '👿', name: 'অসুর' };
+            document.getElementById('p2-title').textContent = 'দূষণাসুর';
+            UI.roles.classList.remove('hidden');
+            UI.roles.classList.add('flex');
+            renderRoleSelection(0);
+        }
+
+        function renderRoleSelection(playerIndex) {
+            const grid = document.getElementById('roles-grid');
+            const btn = document.getElementById('btn-confirm-role');
+            grid.innerHTML = '';
+            btn.classList.add('hidden');
+            let selectedRoleTemp = null;
+
+            ROLES.forEach(role => {
+                const card = document.createElement('div');
+                card.className = `glass-panel p-4 md:p-5 rounded-2xl text-center cursor-pointer border-2 transition transform hover:-translate-y-1 hover:shadow-xl border-transparent hover:border-emerald-400 bg-white flex flex-col justify-between h-full display-font`;
+                card.innerHTML = `
+                    <div>
+                        <div class="text-4xl md:text-5xl mb-2 drop-shadow-md">${role.icon}</div>
+                        <div class="font-bold text-base md:text-lg text-slate-800">${role.name}</div>
+                    </div>
+                    <div class="text-[10px] md:text-[11px] text-slate-600 mt-3 leading-snug bg-slate-50 p-2 rounded-lg border border-slate-100" style="font-family:'Hind Siliguri',sans-serif;">
+                        ${role.desc}
+                    </div>
+                `;
+
+                card.onclick = () => {
+                    Array.from(grid.children).forEach(c => c.classList.remove('border-emerald-500', 'bg-emerald-50', 'shadow-md', 'scale-105'));
+                    card.classList.add('border-emerald-500', 'bg-emerald-50', 'shadow-md', 'scale-105');
+                    selectedRoleTemp = role;
+                    playSound('dice');
+                    btn.classList.remove('hidden');
+                };
+                grid.appendChild(card);
+            });
+
+            btn.onclick = () => {
+                if(selectedRoleTemp) {
+                    state.players[playerIndex].role = selectedRoleTemp;
+                    startGame();
+                }
+            };
+        }
+
+        function renderBoard() {
+            UI.boardGrid.innerHTML = '';
+            let cellOrder = [];
+            for (let row = 9; row >= 0; row--) {
+                for (let col = 0; col < 10; col++) {
+                    let num = (row % 2 !== 0) ? (row * 10) + (10 - col) : (row * 10) + col + 1;
+                    cellOrder.push(num);
+                }
+            }
+
+            cellOrder.forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'board-cell relative';
+                cell.id = `cell-${num}`;
+                const colorIndex = num % 4;
+                cell.classList.add(`cell-color-${colorIndex}`);
+                
+                let innerHTML = `<span class="opacity-80 drop-shadow-sm">${num}</span>`;
+                
+                if (PIPES[num]) {
+                    cell.classList.remove(`cell-color-${colorIndex}`);
+                    cell.classList.add('cell-snake');
+                    innerHTML += `<span class="absolute top-1 left-1 text-xs sm:text-sm">🚰</span>`;
+                }
+                if (BRANCHES[num]) {
+                    cell.classList.remove(`cell-color-${colorIndex}`);
+                    cell.classList.add('cell-ladder');
+                    innerHTML += `<span class="absolute top-1 left-1 text-xs sm:text-sm">🌿</span>`;
+                }
+                if (MILESTONES_DATA[num]) {
+                    cell.classList.remove(`cell-color-${colorIndex}`);
+                    cell.classList.add('cell-milestone');
+                    innerHTML += `<span class="absolute top-1 right-1 text-xs sm:text-sm">🚩</span>
+                                  <div id="ms-ind-${num}" class="milestone-indicator"></div>`;
+                }
+                
+                cell.innerHTML = innerHTML;
+                UI.boardGrid.appendChild(cell);
+            });
+            setTimeout(drawConnections, 100);
+        }
+
+        function getCellCenter(cellNum) {
+            const cell = document.getElementById(`cell-${cellNum}`);
+            const board = UI.boardGrid;
+            if(!cell || !board) return {x: 0, y: 0};
+            const cRect = cell.getBoundingClientRect();
+            const bRect = board.getBoundingClientRect();
+            return {
+                x: cRect.left - bRect.left + cRect.width / 2,
+                y: cRect.top - bRect.top + cRect.height / 2
+            };
+        }
+
+        function drawConnections() {
+            const svg = document.getElementById('svg-overlay');
+            svg.innerHTML = '';
+            
+            for (let start in BRANCHES) {
+                let p1 = getCellCenter(start);
+                let p2 = getCellCenter(BRANCHES[start].to);
+                let midX = (p1.x + p2.x) / 2 + (Math.random() * 20 - 10);
+                let midY = (p1.y + p2.y) / 2 + (Math.random() * 20 - 10);
+                let leaf1X = p1.x + (p2.x - p1.x) * 0.3;
+                let leaf1Y = p1.y + (p2.y - p1.y) * 0.3;
+                let leaf2X = p1.x + (p2.x - p1.x) * 0.7;
+                let leaf2Y = p1.y + (p2.y - p1.y) * 0.7;
+
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${midY} ${p2.x} ${p2.y}" fill="none" stroke="#22c55e" stroke-width="6" stroke-linecap="round" opacity="0.8"/>`;
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} Q ${midX} ${midY} ${p2.x} ${p2.y}" fill="none" stroke="#166534" stroke-width="2" stroke-linecap="round" stroke-dasharray="4, 4" opacity="0.6"/>`;
+                svg.innerHTML += `<ellipse cx="${leaf1X}" cy="${leaf1Y}" rx="4" ry="8" fill="#4ade80" transform="rotate(45 ${leaf1X} ${leaf1Y})" opacity="0.9"/>`;
+                svg.innerHTML += `<ellipse cx="${leaf2X}" cy="${leaf2Y}" rx="4" ry="8" fill="#4ade80" transform="rotate(-45 ${leaf2X} ${leaf2Y})" opacity="0.9"/>`;
+            }
+            
+            for (let start in PIPES) {
+                let p1 = getCellCenter(start);
+                let p2 = getCellCenter(PIPES[start].to);
+                let cornerX = p1.x;
+                let cornerY = p2.y;
+                if (Math.random() > 0.5) { cornerX = p2.x; cornerY = p1.y; }
+
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} L ${cornerX} ${cornerY} L ${p2.x} ${p2.y}" fill="none" stroke="#1f2937" stroke-width="8" stroke-linejoin="miter" opacity="0.9"/>`;
+                svg.innerHTML += `<path d="M ${p1.x} ${p1.y} L ${cornerX} ${cornerY} L ${p2.x} ${p2.y}" fill="none" stroke="#4b5563" stroke-width="4" stroke-linejoin="miter" stroke-dasharray="10, 2" opacity="0.9"/>`;
+            }
+        }
+
+        function getCoordsForNum(num) {
+            if (num === 0) return { x: -10, y: -10 };
+            let zeroBased = num - 1;
+            let row = Math.floor(zeroBased / 10);
+            let col = zeroBased % 10;
+            let x = row % 2 === 0 ? col : 9 - col;
+            let y = row;
+            return { x, y };
+        }
+
+        function startGame() {
+            UI.roles.classList.add('hidden');
+            UI.roles.classList.remove('flex');
+            UI.game.classList.remove('hidden');
+            UI.game.classList.add('flex');
+            
+            document.getElementById(`p1-icon`).textContent = state.players[0].role.icon;
+            document.getElementById(`p1-role-name`).textContent = state.players[0].role.name;
+            document.getElementById(`token-0`).innerHTML = `<span class="text-xs sm:text-base">${state.players[0].role.icon}</span>`;
+            
+            document.getElementById(`p2-icon`).textContent = '👿';
+            document.getElementById(`p2-role-name`).textContent = 'পরিবেশ ধ্বংসকারী';
+            document.getElementById(`token-1`).innerHTML = `<span class="text-xs sm:text-base">👿</span>`;
+
+            setTimeout(drawConnections, 100);
+            
+            state.currentPlayerIndex = 0;
+            state.gameOver = false;
+            state.players.forEach(p => p.position = 0);
+            Object.keys(MILESTONES_DATA).forEach(m => state.milestonesStatus[m] = null);
+            state.powers = { scientistUsed: false, farmerUsed: false, volunteerUsed: false, rangerUsed: false, studentUsed: false, photographerUsed: false, isPhotoSelecting: false };
+            
+            setupPowerUI();
+            updateTokensVisual();
+            updateUIInfo();
+            updateMilestoneIndicators();
+            updateTurnVisuals();
+        }
+
+        function setupPowerUI() {
+            const roleId = state.players[0].role.id;
+            const btn = document.getElementById('btn-special-power');
+            const icon = document.getElementById('power-icon');
+            const name = document.getElementById('power-name');
+            const count = document.getElementById('power-count');
+            
+            btn.classList.add('hidden');
+            document.getElementById('power-photo-ui').classList.add('hidden');
+            
+            btn.classList.remove('hidden');
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            if(roleId === 'photographer') {
+                btn.disabled = false; icon.textContent = '📷'; name.textContent = 'ফোকাস লেন্স';
+            } else if(roleId === 'volunteer') {
+                btn.disabled = true; icon.textContent = '🧒'; name.textContent = 'অদম্য শক্তি';
+            } else if(roleId === 'scientist') {
+                btn.disabled = true; icon.textContent = '👨‍🔬'; name.textContent = 'গবেষণার ঢাল';
+            } else if(roleId === 'farmer') {
+                btn.disabled = true; icon.textContent = '👩‍🌾'; name.textContent = 'মাটির টান';
+            } else if(roleId === 'ranger') {
+                btn.disabled = true; icon.textContent = '🧑‍🚒'; name.textContent = 'পাহারাদার';
+            } else if(roleId === 'student') {
+                btn.disabled = true; icon.textContent = '🧑‍🎓'; name.textContent = 'তারুণ্যের জোয়ার';
+            }
+
+            if (state.powers[`${roleId}Used`]) {
+                count.textContent = '0/1';
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                count.textContent = '1/1';
+            }
+        }
+
+        function markPowerUsed(roleId) {
+            state.powers[`${roleId}Used`] = true;
+            const count = document.getElementById('power-count');
+            const btn = document.getElementById('btn-special-power');
+            if (count && btn) {
+                count.textContent = '0/1';
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.classList.remove('power-active');
+            }
+        }
+
+        function togglePower() {
+            if(state.players[0].role.id === 'photographer' && !state.powers.photographerUsed && state.currentPlayerIndex === 0 && !state.isAnimating) {
+                state.powers.isPhotoSelecting = !state.powers.isPhotoSelecting;
+                const ui = document.getElementById('power-photo-ui');
+                const btn = document.getElementById('btn-special-power');
+                if(state.powers.isPhotoSelecting) {
+                    ui.classList.remove('hidden'); btn.classList.add('power-active');
+                } else {
+                    ui.classList.add('hidden'); btn.classList.remove('power-active');
+                }
+            }
+        }
+        
+        async function usePhotoPower(num) {
+            document.getElementById('power-photo-ui').classList.add('hidden');
+            markPowerUsed('photographer');
+            state.powers.isPhotoSelecting = false;
+            
+            showToast("📷 ফোকাস লেন্স ব্যবহার করা হয়েছে!", "milestone");
+            await executeTurn(num);
+        }
+
+        function updateTokensVisual() {
+            state.players.forEach(p => {
+                const token = document.getElementById(`token-${p.id}`);
+                const coords = getCoordsForNum(p.position);
+                
+                if (p.position === 0) {
+                    token.style.left = p.id === 0 ? '-5%' : '5%';
+                    token.style.bottom = p.id === 0 ? '-5%' : '-15%';
+                } else {
+                    let offset = p.id === 0 ? -10 : 10;
+                    token.style.left = `calc(${coords.x * 10 + 5}% + ${offset}px)`;
+                    token.style.bottom = `calc(${coords.y * 10 + 5}% - ${offset}px)`;
+                }
+            });
+        }
+
+        function countPlayerMilestones(playerId) {
+            return Object.values(state.milestonesStatus).filter(ownerId => ownerId === playerId).length;
+        }
+
+        function renderMilestoneTrackers() {
+            [0, 1].forEach(playerId => {
+                const trackerContainer = document.getElementById(`p${playerId + 1}-milestone-tracker`);
+                if (!trackerContainer) return;
+                trackerContainer.innerHTML = '';
+                Object.keys(MILESTONES_DATA).forEach(mStr => {
+                    const ms = MILESTONES_DATA[mStr];
+                    const iconSpan = document.createElement('span');
+                    iconSpan.id = `p${playerId + 1}-tracker-${mStr}`;
+                    iconSpan.textContent = ms.icon;
+                    iconSpan.title = ms.name;
+                    iconSpan.className = 'text-xs md:text-base opacity-30 grayscale transition-all duration-500 ease-out transform cursor-default';
+                    trackerContainer.appendChild(iconSpan);
+                });
+            });
+        }
+
+        function updateUIInfo() {
+            state.players.forEach(p => {
+                document.getElementById(`p${p.id+1}-pos`).textContent = p.position;
+                document.getElementById(`p${p.id+1}-ms`).textContent = countPlayerMilestones(p.id);
+            });
+        }
+
+        function updateTurnVisuals() {
+            const currentP = state.players[state.currentPlayerIndex];
+            UI.turnText.textContent = currentP.name;
+            UI.turnText.className = currentP.id === 0 ? 'text-blue-300' : 'text-red-300';
+            
+            const p1Card = document.getElementById('p1-card');
+            const p2Card = document.getElementById('p2-card');
+            
+            if (currentP.id === 0) {
+                p1Card.classList.remove('opacity-70', 'scale-95'); p1Card.classList.add('scale-105', 'shadow-lg');
+                p2Card.classList.add('opacity-70', 'scale-95'); p2Card.classList.remove('scale-105', 'shadow-lg');
+                UI.diceBtn.disabled = false;
+            } else {
+                p2Card.classList.remove('opacity-70', 'scale-95'); p2Card.classList.add('scale-105', 'shadow-lg');
+                p1Card.classList.add('opacity-70', 'scale-95'); p1Card.classList.remove('scale-105', 'shadow-lg');
+                
+                if (currentP.isComputer) {
+                    UI.diceBtn.disabled = true;
+                    setTimeout(computerTurn, 1200);
+                } else {
+                    UI.diceBtn.disabled = false;
+                }
+            }
+        }
+
+        function updateMilestoneIndicators() {
+            Object.keys(state.milestonesStatus).forEach(mStr => {
+                let m = parseInt(mStr);
+                const indicator = document.getElementById(`ms-ind-${m}`);
+                if(indicator) {
+                    indicator.className = 'milestone-indicator';
+                    const owner = state.milestonesStatus[m];
+                    if (owner === 0) indicator.classList.add('milestone-owned-1');
+                    if (owner === 1) indicator.classList.add('milestone-owned-2');
+                }
+            });
+
+            [0, 1].forEach(playerId => {
+                Object.keys(state.milestonesStatus).forEach(mStr => {
+                    const owner = state.milestonesStatus[mStr];
+                    const trackerIcon = document.getElementById(`p${playerId + 1}-tracker-${mStr}`);
+                    if (trackerIcon) {
+                        if (owner === playerId) {
+                            trackerIcon.classList.remove('opacity-30', 'grayscale', 'scale-100');
+                            trackerIcon.classList.add('opacity-100', 'scale-125', 'drop-shadow-md');
+                        } else {
+                            trackerIcon.classList.add('opacity-30', 'grayscale', 'scale-100');
+                            trackerIcon.classList.remove('opacity-100', 'scale-125', 'drop-shadow-md');
+                        }
+                    }
+                });
+            });
+            updateUIInfo();
+        }
+
+        function showToast(msg, type = 'default') {
+            UI.toast.className = "display-font absolute top-2 md:top-6 px-4 py-2 md:px-6 md:py-3 rounded-xl md:rounded-2xl transition-all duration-500 z-50 text-center font-bold pointer-events-none transform -translate-y-6 opacity-0 flex items-center justify-center gap-2 md:gap-3 min-w-[220px] md:min-w-[300px] text-sm md:text-base border";
+            if (type === 'milestone') {
+                UI.toast.classList.add('text-emerald-950', 'scale-105');
+                UI.toast.style.background = 'linear-gradient(135deg, #f6d78a, #e8b54a)';
+                UI.toast.style.borderColor = 'rgba(255,255,255,0.6)';
+                UI.toast.style.boxShadow = '0 12px 30px rgba(232,181,74,0.55)';
+            } else if (type === 'error' || type === 'warning') {
+                UI.toast.classList.add('text-white');
+                UI.toast.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+                UI.toast.style.borderColor = 'rgba(255,255,255,0.3)';
+                UI.toast.style.boxShadow = '0 10px 24px rgba(185,28,28,0.5)';
+            } else {
+                UI.toast.classList.add('text-white');
+                UI.toast.style.background = 'linear-gradient(135deg, #0f4d47, #062a26)';
+                UI.toast.style.borderColor = 'rgba(232,181,74,0.4)';
+                UI.toast.style.boxShadow = '0 10px 24px rgba(0,0,0,0.4)';
+            }
+
+            UI.toast.innerHTML = msg;
+            UI.toast.classList.remove('opacity-0', '-translate-y-6');
+            UI.toast.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                UI.toast.classList.remove('opacity-100', 'translate-y-0');
+                UI.toast.classList.add('opacity-0', '-translate-y-6');
+            }, 3500); // 3.5 sec display for larger text
+        }
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        async function humanRollDice() {
+            if (state.isAnimating || state.players[state.currentPlayerIndex].isComputer || state.powers.isPhotoSelecting) return;
+            await executeTurn();
+        }
+
+        async function computerTurn() {
+            if (state.gameOver) return;
+            await executeTurn();
+        }
+
+        async function executeTurn(forcedRoll = null) {
+            state.isAnimating = true;
+            UI.diceBtn.disabled = true;
+            
+            const player = state.players[state.currentPlayerIndex];
+            
+            playSound('dice');
+            UI.diceVisual.classList.add('dice-rolling');
+            UI.diceResultText.classList.remove('opacity-100');
+            UI.diceResultText.classList.add('opacity-0');
+            
+            // Rapid face changing animation for 2D Dice
+            let rollInterval = setInterval(() => {
+                UI.diceVisual.textContent = DICE_FACES[Math.floor(Math.random() * 6)];
+            }, 100);
+            
+            await sleep(600);
+            clearInterval(rollInterval);
+            
+            const roll = forcedRoll !== null ? forcedRoll : Math.floor(Math.random() * 6) + 1;
+            
+            UI.diceVisual.classList.remove('dice-rolling');
+            UI.diceVisual.textContent = DICE_FACES[roll - 1]; // Exact Final Face
+            UI.diceResultText.textContent = roll;
+            
+            // Pop the exact number up
+            UI.diceResultText.classList.remove('opacity-0');
+            UI.diceResultText.classList.add('opacity-100', 'scale-150');
+            setTimeout(() => UI.diceResultText.classList.remove('scale-150'), 300);
+
+            let willReroll = false;
+            if (player.id === 0 && player.role.id === 'volunteer' && (roll === 1 || roll === 2) && !state.powers.volunteerUsed && forcedRoll === null) {
+                willReroll = await showVolunteerRerollPrompt(roll);
+            }
+
+            await sleep(600);
+            UI.diceResultText.classList.remove('opacity-100');
+            UI.diceResultText.classList.add('opacity-0');
+            UI.diceVisual.textContent = '🎲'; 
+            
+            if (willReroll) {
+                markPowerUsed('volunteer');
+                showToast("🧒 অদম্য শক্তিতে আবার দান ফেলা হচ্ছে!", "milestone");
+                state.isAnimating = false;
+                setTimeout(humanRollDice, 100);
+                return; 
+            }
+
+            let extraTurn = false;
+            let studentBonus = false;
+            
+            if (player.position + roll > 100) {
+                showToast(`১০০-তে পৌঁছানোর জন্য ঠিক ${100 - player.position} প্রয়োজন!`, 'warning');
+                await sleep(1500);
+            } else {
+                for (let i = 1; i <= roll; i++) {
+                    const oldPos = player.position;
+                    player.position++;
+                    updateTokensVisual();
+                    updateUIInfo();
+                    
+                    playSound('move');
+                    
+                    const claimed = checkClaimMilestones(player, oldPos, player.position);
+                    if (claimed && player.id === 0 && player.role.id === 'student' && !state.powers.studentUsed) {
+                        studentBonus = true;
+                    }
+                    
+                    await sleep(350); 
+                }
+
+                if (player.position === 100) {
+                    handleWin(player);
+                    return; 
+                }
+
+                extraTurn = await handleBoardEvents(player);
+                
+                if (studentBonus && player.position < 100 && !extraTurn && !state.gameOver) {
+                    markPowerUsed('student');
+                    showToast("🧑‍🎓 তারুণ্যের জোয়ার! আরও ২ ঘর এগিয়ে যান!", "milestone");
+                    await sleep(800);
+                    for(let i=0; i<2; i++) {
+                        if(player.position >= 100) break;
+                        const op = player.position;
+                        player.position++;
+                        updateTokensVisual(); updateUIInfo(); playSound('move');
+                        checkClaimMilestones(player, op, player.position);
+                        await sleep(350);
+                    }
+                    extraTurn = await handleBoardEvents(player); 
+                    if (player.position === 100) { handleWin(player); return; }
+                }
+            }
+
+            if(!state.gameOver) {
+                if(!extraTurn) {
+                    state.currentPlayerIndex = state.currentPlayerIndex === 0 ? 1 : 0;
+                } else {
+                    showToast(`${player.name} আবার চাল দেওয়ার সুযোগ পেলেন!`, "milestone");
+                }
+                updateTurnVisuals();
+            }
+            state.isAnimating = false;
+        }
+
+        function checkClaimMilestones(player, oldPos, newPos) {
+            let claimedFlag = false;
+            Object.keys(MILESTONES_DATA).forEach(mStr => {
+                let m = parseInt(mStr);
+                // ONLY claim if the milestone is currently unowned (null)
+                if (m > oldPos && m <= newPos) {
+                    if (state.milestonesStatus[m] === null) {
+                        state.milestonesStatus[m] = player.id;
+                        claimedFlag = true;
+                        
+                        playSound('milestone'); 
+                        
+                        if (player.id === 0) {
+                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#3b82f6', '#eab308'] });
+                            showToast(`নতুন মাইলস্টোন অর্জিত: <b>${MILESTONES_DATA[m].name}</b>`, 'milestone');
+                        } else {
+                            showToast(`⚠️ দূষণাসুর <b>${MILESTONES_DATA[m].name}</b> মাইলস্টোনটি দখল করেছে!`, 'error');
+                        }
+                        updateMilestoneIndicators();
+                    }
+                }
+            });
+            return claimedFlag;
+        }
+
+        function showVolunteerRerollPrompt(roll) {
+            return new Promise(resolve => {
+                const modal = document.getElementById('info-modal');
+                const content = document.getElementById('modal-content');
+                const rerollBtn = document.getElementById('btn-reroll');
+                
+                document.getElementById('modal-icon').textContent = '🧒';
+                document.getElementById('modal-title').textContent = 'অদম্য শক্তি ব্যবহার করবেন?';
+                document.getElementById('modal-desc').textContent = `আপনার দানে ${roll} পড়েছে। আপনি চাইলে এই দান বাতিল করে নতুন করে ছক্কা ফেলতে পারেন। (গেমে ১ বার ব্যবহারযোগ্য)`;
+                
+                document.getElementById('modal-header').className = "p-4 text-center border-b border-yellow-200 bg-yellow-50 text-yellow-700 flex flex-col items-center";
+                document.getElementById('modal-title').className = "display-font text-2xl font-bold text-yellow-700";
+
+                rerollBtn.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                setTimeout(() => content.classList.remove('scale-95'), 10);
+
+                let chosen = false;
+                
+                rerollBtn.onclick = () => {
+                    chosen = true;
+                    content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden'); rerollBtn.classList.add('hidden'); resolve(true); }, 300);
+                };
+                
+                state.modalCallback = () => {
+                    if(chosen) return;
+                    content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden'); rerollBtn.classList.add('hidden'); resolve(false); }, 300);
+                };
+            });
+        }
+
+        async function animatePath(player, startPos, endPos, type) {
+            const token = document.getElementById(`token-${player.id}`);
+            const startCoords = getCoordsForNum(startPos);
+            const endCoords = getCoordsForNum(endPos);
+            
+            let offset = player.id === 0 ? -10 : 10;
+            const startX = startCoords.x * 10 + 5;
+            const startY = startCoords.y * 10 + 5;
+            const endX = endCoords.x * 10 + 5;
+            const endY = endCoords.y * 10 + 5;
+
+            token.style.transition = 'none';
+
+            const duration = 1200; 
+            const startTime = performance.now();
+
+            return new Promise(resolve => {
+                function step(currentTime) {
+                    let elapsed = currentTime - startTime;
+                    let t = Math.min(elapsed / duration, 1);
+                    
+                    let easeT = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                    let currentX, currentY;
+
+                    if (type === 'pipe') {
+                        let cornerX = startX;
+                        let cornerY = endY;
+                        if (Math.random() > 0.5) { cornerX = endX; cornerY = startY; }
+
+                        if (easeT < 0.5) {
+                            let t1 = easeT * 2;
+                            currentX = startX + (cornerX - startX) * t1;
+                            currentY = startY + (cornerY - startY) * t1;
+                        } else {
+                            let t2 = (easeT - 0.5) * 2;
+                            currentX = cornerX + (endX - cornerX) * t2;
+                            currentY = cornerY + (endY - cornerY) * t2;
+                        }
+                    } else if (type === 'branch') {
+                        let midX = (startX + endX) / 2 + 10;
+                        let midY = (startY + endY) / 2 + 10;
+                        currentX = (1-easeT)*(1-easeT)*startX + 2*(1-easeT)*easeT*midX + easeT*easeT*endX;
+                        currentY = (1-easeT)*(1-easeT)*startY + 2*(1-easeT)*easeT*midY + easeT*easeT*endY;
+                    }
+
+                    token.style.left = `calc(${currentX}% + ${offset}px)`;
+                    token.style.bottom = `calc(${currentY}% - ${offset}px)`;
+
+                    if (t < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        token.style.transition = 'left 0.4s ease-in-out, bottom 0.4s ease-in-out';
+                        player.position = endPos;
+                        updateTokensVisual();
+                        resolve();
+                    }
+                }
+                requestAnimationFrame(step);
+            });
+        }
+
+        async function handleBoardEvents(player) {
+            let pos = player.position;
+            let extraTurn = false;
+            
+            if (PIPES[pos]) {
+                const p = PIPES[pos];
+                
+                if (player.id === 0 && player.role.id === 'scientist' && !state.powers.scientistUsed && (pos === 62 || pos === 98)) {
+                    await showModalPromise("👨‍🔬", "গবেষণার ঢাল সক্রিয়!", "বিজ্ঞানীর বুদ্ধিতে রাসায়নিক দূষণ থেকে রক্ষা পাওয়া গেল। নিচে নামতে হলো না!", "success");
+                    markPowerUsed('scientist');
+                    return false;
+                }
+                
+                await showModalPromise(p.icon, p.title, p.msg, "error");
+                playSound('pipe'); 
+                
+                let targetPos = p.to;
+                if (player.id === 0 && player.role.id === 'ranger' && !state.powers.rangerUsed) {
+                    targetPos = Math.floor((pos + p.to) / 2);
+                    markPowerUsed('ranger');
+                    showToast("🧑‍🚒 বনরক্ষীর দক্ষতায় অর্ধেক রাস্তায় আটকে গেছেন!", "milestone");
+                }
+                
+                await animatePath(player, pos, targetPos, 'pipe');
+                updateUIInfo();
+                
+                releaseLostMilestones(player, pos, targetPos);
+                
+                await sleep(200); 
+                
+            } else if (BRANCHES[pos]) {
+                const b = BRANCHES[pos];
+                await showModalPromise(b.icon, b.title, b.msg, "success");
+                playSound('ladder'); 
+                
+                const oldPos = player.position;
+                const targetPos = b.to;
+                
+                await animatePath(player, pos, targetPos, 'branch');
+                updateUIInfo();
+                checkClaimMilestones(player, oldPos, targetPos);
+                
+                if (player.id === 0 && player.role.id === 'farmer' && !state.powers.farmerUsed) {
+                    markPowerUsed('farmer');
+                    showToast("👩‍🌾 মাটির টান! কৃষক আরও একটি চাল দেওয়ার সুযোগ পেলেন।", "milestone");
+                    extraTurn = true;
+                }
+                await sleep(200);
+            }
+            return extraTurn;
+        }
+
+        function releaseLostMilestones(player, startPos, endPos) {
+            let lostCount = 0;
+            let autoClaimedByOther = 0;
+            const otherPlayerId = player.id === 0 ? 1 : 0;
+            const otherPlayer = state.players[otherPlayerId];
+
+            Object.keys(state.milestonesStatus).forEach(mStr => {
+                let m = parseInt(mStr);
+                // If milestone is strictly greater than new position, and owned by this falling player
+                if (m > endPos && state.milestonesStatus[m] === player.id) {
+                    lostCount++;
+                    
+                    // NEW LOGIC: Check if the opponent is standing ON or ABOVE this milestone
+                    if (otherPlayer.position >= m) {
+                        state.milestonesStatus[m] = otherPlayerId; // Auto-assign to opponent
+                        autoClaimedByOther++;
+                    } else {
+                        state.milestonesStatus[m] = null; // Nobody is above it, make it unclaimed
+                    }
+                }
+            });
+
+            if (lostCount > 0) {
+                if (player.id === 0) {
+                    let msg = `⚠️ আপনি নিচে পড়ে গিয়ে ${lostCount} টি মাইলস্টোন হারিয়েছেন!`;
+                    if (autoClaimedByOther > 0) {
+                        msg += `<br><span class="text-yellow-200">এর মধ্যে ${autoClaimedByOther}টি দূষণাসুর স্বয়ংক্রিয়ভাবে দখল করেছে কারণ সে উপরে আছে!</span>`;
+                    } else {
+                        msg += ` সেগুলো এখন ফাঁকা।`;
+                    }
+                    showToast(msg, 'error');
+                } else {
+                    let msg = `💥 দূষণাসুর নিচে পড়ে গিয়ে ${lostCount} টি মাইলস্টোন হারিয়েছে!`;
+                    if (autoClaimedByOther > 0) {
+                        msg += `<br><span class="text-white">এর মধ্যে ${autoClaimedByOther}টি আপনি স্বয়ংক্রিয়ভাবে পেয়ে গেছেন কারণ আপনি উপরে আছেন! 🎉</span>`;
+                        playSound('milestone');
+                    } else {
+                        msg += ` সেগুলো এখন ফাঁকা।`;
+                    }
+                    showToast(msg, 'milestone');
+                }
+                updateMilestoneIndicators();
+            }
+        }
+
+        function showModalPromise(icon, title, desc, type) {
+            return new Promise(resolve => {
+                const modal = document.getElementById('info-modal');
+                const content = document.getElementById('modal-content');
+                const rerollBtn = document.getElementById('btn-reroll');
+                if(rerollBtn) rerollBtn.classList.add('hidden');
+                
+                document.getElementById('modal-icon').textContent = icon;
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-desc').textContent = desc;
+                
+                const header = document.getElementById('modal-header');
+                if(type === 'error') {
+                    header.className = "p-4 text-center border-b border-red-200 bg-red-50 text-red-700 flex flex-col items-center";
+                    document.getElementById('modal-title').className = "display-font text-2xl font-bold text-red-700";
+                } else {
+                    header.className = "p-4 text-center border-b border-emerald-200 bg-emerald-50 text-emerald-700 flex flex-col items-center";
+                    document.getElementById('modal-title').className = "display-font text-2xl font-bold text-emerald-700";
+                }
+
+                modal.classList.remove('hidden');
+                setTimeout(() => content.classList.remove('scale-95'), 10);
+
+                state.modalCallback = () => {
+                    content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden'); resolve(); }, 300);
+                };
+
+                if(state.players[state.currentPlayerIndex].isComputer) {
+                    setTimeout(() => { if(state.modalCallback) state.modalCallback(); }, 2500);
+                }
+            });
+        }
+
+        function closeModal() {
+            if(state.modalCallback) {
+                state.modalCallback();
+                state.modalCallback = null;
+            }
+        }
+
+        function getWinnerTitle(milestoneCount) {
+            if (milestoneCount >= 8) return "👑 পূর্ব কলকাতা জলাভূমির মহারক্ষক";
+            if (milestoneCount >= 6) return "🏆 জলাভূমির নায়ক";
+            if (milestoneCount >= 4) return "🌿 প্রকৃতির অভিভাবক";
+            if (milestoneCount >= 2) return "🌱 নবীন জলাভূমি রক্ষক";
+            return "💚 পরিবেশ বন্ধু";
+        }
+
+        function handleWin(player) {
+            state.gameOver = true;
+            UI.diceBtn.disabled = true;
+            
+            const winScreen = document.getElementById('win-screen');
+            const icon = document.getElementById('end-icon');
+            const title = document.getElementById('end-title');
+            const name = document.getElementById('win-player-name');
+            const statsBox = document.getElementById('end-stats-box');
+            const quote = document.getElementById('end-quote');
+            
+            winScreen.classList.remove('hidden', 'from-red-600', 'to-orange-500', 'from-green-400', 'to-blue-500');
+            
+            if (player.id === 0) {
+                winScreen.classList.add('from-green-400', 'to-blue-500');
+                playSound('milestone');
+                
+                const duration = 4000;
+                const end = Date.now() + duration;
+                (function frame() {
+                    confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#22c55e', '#3b82f6', '#eab308'] });
+                    confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#22c55e', '#3b82f6', '#eab308'] });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+
+                const msCount = countPlayerMilestones(player.id);
+                const roleTitle = getWinnerTitle(msCount);
+                
+                icon.textContent = '🎉';
+                title.textContent = 'অভিনন্দন!';
+                title.className = "text-5xl font-extrabold mb-2 drop-shadow-md text-yellow-300";
+                name.textContent = 'আপনি দূষণাসুরকে হারিয়েছেন!';
+                statsBox.classList.remove('hidden');
+                document.getElementById('win-milestone-count').textContent = msCount;
+                document.getElementById('win-title').textContent = roleTitle;
+                quote.textContent = '"প্রকৃতি রক্ষার এই দায়িত্ব বাস্তব জীবনেও পালন করুন।"';
+                
+            } else {
+                winScreen.classList.add('from-red-600', 'to-orange-500');
+                icon.textContent = '💀';
+                title.textContent = 'EKW ধ্বংস হয়ে গেল!';
+                title.className = "text-5xl font-extrabold mb-2 drop-shadow-md text-white";
+                name.textContent = 'দূষণাসুর জিতে গেছে...';
+                statsBox.classList.add('hidden');
+                quote.textContent = '"আমরা যদি আজ সচেতন না হই, কাল হয়তো জলাভূমি বলে কিছু থাকবে না।"';
+            }
+            
+            winScreen.classList.remove('hidden');
+        }
+
+        function resetGame() {
+            document.getElementById('win-screen').classList.add('hidden');
+            UI.game.classList.add('hidden');
+            UI.game.classList.remove('flex');
+            state.players.forEach(p => p.role = null);
+            UI.menu.classList.remove('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
